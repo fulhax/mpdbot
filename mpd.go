@@ -123,15 +123,6 @@ func (c *MpdClient) GetStatus() (MpdStatus, error) {
 	return status, nil
 }
 
-func (c *MpdClient) GetPlaylistLength() (int, error) {
-	items, err := c.con.PlaylistInfo(-1, -1)
-	if err != nil {
-		return 0, err
-	}
-
-	return len(items), nil
-}
-
 func (c *MpdClient) GetState() string {
 	return ""
 

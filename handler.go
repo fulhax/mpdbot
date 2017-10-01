@@ -43,7 +43,8 @@ func status(w http.ResponseWriter, r *http.Request) {
 
 func searchAndAdd(w http.ResponseWriter, r *http.Request) {
 	search := r.FormValue("search")
-	file, err := queueHandler.addToQueue("lol", search)
+	user := r.FormValue("user")
+	file, err := queueHandler.addToQueue(user, search)
 	if err != nil {
 		errorHandler(w, r, http.StatusBadRequest)
 	}

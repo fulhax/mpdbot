@@ -24,6 +24,33 @@ func addToPlayerlistHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 
+func status(w http.ResponseWriter, r *http.Request) {
+	mpdcon, err := mpd.Dial("tcp", *mpdAddr)
+	defer mpdcon.Close()
+	if err != nil {
+		log.Fatal(err)
+		errorHandler(w, r, http.StatusBadRequest)
+		return
+	}
+	status, err := mpdcon.Status()
+	if err != nil {
+		log.Fatal(err)
+		errorHandler(w, r, http.StatusBadRequest)
+		return
+	}
+	serveJSON(w, r, status)
+}
+
+func searchAndAdd(w http.ResponseWriter, r *http.Request) {
+	search := r.FormValue("search")
+	file, err := queueHandler.addToQueue("lol", search)
+	if err != nil {
+		errorHandler(w, r, http.StatusBadRequest)
+	}
+
+	serveJSON(w, r, file)
+}
+
 func getPlaylist(w http.ResponseWriter, r *http.Request) {
 	mpdcon, err := mpd.Dial("tcp", *mpdAddr)
 	defer mpdcon.Close()

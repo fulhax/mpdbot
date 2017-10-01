@@ -11,10 +11,12 @@ import (
 )
 
 var (
-	debug   *bool   = flag.Bool("debug", false, "Enable debug mode")
-	port    *string = flag.String("port", "8888", "Serve api on port")
-	mpdAddr *string = flag.String("mpd", "127.0.0.1:6600", "Mpd")
-	dbFile  *string = flag.String("db", "mpdapi.db", "Path to database file")
+	debug        *bool   = flag.Bool("debug", false, "Enable debug mode")
+	port         *string = flag.String("port", "8888", "Serve api on port")
+	mpdAddr      *string = flag.String("mpd", "127.0.0.1:6600", "Mpd")
+	dbFile       *string = flag.String("db", "mpdapi.db", "Path to database file")
+	queueHandler *QueueHandler
+	mpdClient    *MpdClient
 )
 
 func errorHandler(w http.ResponseWriter, r *http.Request, status int) {
@@ -41,7 +43,10 @@ func serveApi() {
 	r.HandleFunc("/playlist", getPlaylist).Methods("GET")
 	r.HandleFunc("/current", getNowPlayingHandler).Methods("GET")
 	r.HandleFunc("/next", playNextSongHandler).Methods("POST")
-	r.HandleFunct("/add", addToPlaylistHandler).Methods("POST")
+	r.HandleFunc("/add", searchAndAdd).Methods("GET")
+	r.HandleFunc("/status", status).Methods("GET")
+	//r.HandleFunc("/search", searchInLibrary).Methods("GET")
+	// r.HandleFunct("/add", addToPlaylistHandler).Methods("POST")
 	http.Handle("/", r)
 
 	addr := fmt.Sprintf(":%s", *port)
@@ -56,5 +61,13 @@ func serveApi() {
 
 func main() {
 	flag.Parse()
+	mpdClient, err := NewMpdClient("127.0.0.1:6600")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	queueHandler = &QueueHandler{mpdClient: mpdClient}
+	queueHandler.Init()
+
 	serveApi()
 }

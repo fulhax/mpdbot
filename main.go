@@ -7,6 +7,9 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/fulhax/mpdbot/ircbot"
+	irccmd "github.com/fulhax/mpdbot/ircbot/cmd"
+	"github.com/fulhax/mpdbot/mpd"
 	"github.com/gorilla/mux"
 )
 
@@ -14,9 +17,10 @@ var (
 	debug        *bool   = flag.Bool("debug", false, "Enable debug mode")
 	port         *string = flag.String("port", "8888", "Serve api on port")
 	mpdAddr      *string = flag.String("mpd", "127.0.0.1:6600", "Mpd")
+	ircAddr      *string = flag.String("irc", "127.0.0.1:6697", "Irc")
 	dbFile       *string = flag.String("db", "mpdapi.db", "Path to database file")
-	queueHandler *QueueHandler
-	mpdClient    *MpdClient
+	queueHandler *mpd.QueueHandler
+	mpdClient    *mpd.MpdClient
 )
 
 func errorHandler(w http.ResponseWriter, r *http.Request, status int) {
@@ -61,12 +65,22 @@ func serveApi() {
 
 func main() {
 	flag.Parse()
-	mpdClient, err := NewMpdClient("127.0.0.1:6600")
+
+	irc := ircbot.New("lol", *ircAddr, true)
+	err := irc.AddCommand(&irccmd.Usage{})
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	mpdClient, err := mpd.NewMpdClient(*mpdAddr)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
-	queueHandler = &QueueHandler{mpdClient: mpdClient}
+
+	irc.AddCommand(&IrcMpdNp{mpdClient})
+
+	queueHandler = &mpd.QueueHandler{MpdClient: mpdClient}
 	queueHandler.Init()
 
 	serveApi()

@@ -1,4 +1,4 @@
-package main
+package mpd
 
 import (
 	"fmt"
@@ -8,7 +8,7 @@ import (
 )
 
 type QueueHandler struct {
-	mpdClient   *MpdClient
+	MpdClient   *MpdClient
 	currentSong string
 	currentUser string
 	lastQueued  string
@@ -36,8 +36,8 @@ func (q *QueueHandler) songInQueue(file string) bool {
 	return false
 }
 
-func (q *QueueHandler) addToQueue(user string, song string) (QueueItem, error) {
-	sr, err := q.mpdClient.searchInLibrary(song)
+func (q *QueueHandler) AddToQueue(user string, song string) (QueueItem, error) {
+	sr, err := q.MpdClient.searchInLibrary(song)
 	if err != nil {
 		return QueueItem{}, err
 	}
@@ -77,7 +77,7 @@ func (q *QueueHandler) pullNextSong() (file QueueItem, err error) {
 
 // Handle mpd playlist and add new songs from queue
 func (q *QueueHandler) handlePlaylist() (err error) {
-	w, err := mpd.NewWatcher("tcp", q.mpdClient.addr, "")
+	w, err := mpd.NewWatcher("tcp", q.MpdClient.addr, "")
 	if err != nil {
 		return err
 	}
@@ -91,12 +91,12 @@ func (q *QueueHandler) handlePlaylist() (err error) {
 	}()
 
 	for range w.Event {
-		status, _ := q.mpdClient.GetStatus()
+		status, _ := q.MpdClient.GetStatus()
 		if status.State == "stop" {
 			pPos := status.PlaylistLength
 			fmt.Println("Added song")
 			q.queueNextSong()
-			q.mpdClient.Play(pPos)
+			q.MpdClient.Play(pPos)
 			// fmt.Println("stop")
 
 		}
@@ -109,7 +109,7 @@ func (q *QueueHandler) queueNextSong() {
 	next, _ := q.pullNextSong()
 
 	if next.File != "" {
-		q.mpdClient.AddSong(next.File)
+		q.MpdClient.AddSong(next.File)
 
 	} else {
 		// Get random song.

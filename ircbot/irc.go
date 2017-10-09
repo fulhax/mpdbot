@@ -12,6 +12,7 @@ type Ircbot struct {
 	tls      bool
 	con      *irc.Connection
 	Commands []Command
+	admins   []string
 }
 
 type Command interface {
@@ -21,16 +22,17 @@ type Command interface {
 	Usage() string
 }
 
-func NewIrcBot(nick string, srv string, tls bool) *Ircbot {
-	var ib *Ircbot
-	ib.tls = tls
-	ib.server = srv
+func New(nick string, srv string, tls bool) *Ircbot {
+	ib := Ircbot{
+		tls:    tls,
+		server: srv,
+	}
 
 	ib.con = irc.IRC(nick, nick)
 	ib.con.UseTLS = true
 	ib.con.AddCallback("PRIVMSG", ib.handleMessage)
 	ib.Init()
-	return ib
+	return &ib
 }
 
 func (ib *Ircbot) handleMessage(e *irc.Event) {
@@ -67,16 +69,28 @@ func (ib *Ircbot) RemoveCommand(name string) error {
 	return errors.New("Command not found")
 }
 
+func (ib *Ircbot) AddAdmin(host string) {
+	for _, h := range ib.admins {
+		if h == host {
+			return
+		}
+	}
+
+	ib.admins = append(ib.admins, host)
+}
+
+func (ib *Ircbot) GetAdmins() []string {
+	return ib.admins
+}
+
 func (ib *Ircbot) SendMessage(c string, msg string) {
 	ib.con.Privmsg(c, msg)
 }
 
 func (ib *Ircbot) Init() {
-	ib.AddCommand(Usage{})
-
 	err := ib.con.Connect(ib.server)
 	if err != nil {
 		fmt.Printf("[ircbot] Failed to connect to irc:  %s", err)
 	}
-	ib.con.Loop()
+	go ib.con.Loop()
 }

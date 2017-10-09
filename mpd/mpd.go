@@ -1,6 +1,7 @@
-package main
+package mpd
 
 import (
+	"fmt"
 	"sort"
 	"strconv"
 	"time"
@@ -126,4 +127,13 @@ func (c *MpdClient) GetStatus() (MpdStatus, error) {
 func (c *MpdClient) GetState() string {
 	return ""
 
+}
+
+func (c *MpdClient) CurrentSong() (string, error) {
+	song, err := c.con.CurrentSong()
+	if err != nil {
+		return "", err
+	}
+
+	return fmt.Sprintf("%s - %s", song["Artist"], song["Title"]), nil
 }

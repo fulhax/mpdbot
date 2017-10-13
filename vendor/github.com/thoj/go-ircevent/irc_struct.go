@@ -13,7 +13,6 @@ import (
 )
 
 type Connection struct {
-	sync.Mutex
 	sync.WaitGroup
 	Debug        bool
 	Error        chan error
@@ -39,17 +38,15 @@ type Connection struct {
 	user        string
 	registered  bool
 	events      map[string]map[int]func(*Event)
-	eventsMutex sync.Mutex
 
 	QuitMessage string
 	lastMessage time.Time
-	lastMessageMutex sync.Mutex
 
 	VerboseCallbackHandler bool
 	Log                    *log.Logger
 
 	stopped bool
-	quit    bool //User called Quit, do not reconnect.
+	quit    bool
 }
 
 // A struct to represent an event.

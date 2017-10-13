@@ -43,8 +43,8 @@ func newPromisedAttrs() *PromisedAttrs {
 	return &PromisedAttrs{attrs: make(Attrs), computed: false}
 }
 
-// PromisedID is a promised identifier (to be) returned by MPD.
-type PromisedID int
+// PromisedId is a promised identifier (to be) returned by MPD.
+type PromisedId int
 
 // Value is a convenience method for ensuring that a promise
 // has been computed, returning the Attrs.
@@ -57,7 +57,7 @@ func (pa *PromisedAttrs) Value() (Attrs, error) {
 
 // Value is a convenience method for ensuring that a promise
 // has been computed, returning the ID.
-func (pi *PromisedID) Value() (int, error) {
+func (pi *PromisedId) Value() (int, error) {
 	if *pi == -1 {
 		return -1, errors.New("value has not been computed yet")
 	}
@@ -117,9 +117,9 @@ func (cl *CommandList) Play(pos int) {
 	}
 }
 
-// PlayID plays the song identified by id. If id is negative, start playing
+// PlayId plays the song identified by id. If id is negative, start playing
 // at the currect position in playlist.
-func (cl *CommandList) PlayID(id int) {
+func (cl *CommandList) PlayId(id int) {
 	if id < 0 {
 		cl.cmdQ.PushBack(&command{"playid", nil, cmdNoReturn})
 	} else {
@@ -137,9 +137,9 @@ func (cl *CommandList) Seek(pos, time int) {
 	cl.cmdQ.PushBack(&command{fmt.Sprintf("seek %d %d", pos, time), nil, cmdNoReturn})
 }
 
-// SeekID is identical to Seek except the song is identified by it's id
+// SeekId is identical to Seek except the song is identified by it's id
 // (not position in playlist).
-func (cl *CommandList) SeekID(id, time int) {
+func (cl *CommandList) SeekId(id, time int) {
 	cl.cmdQ.PushBack(&command{fmt.Sprintf("seek %d %d", id, time), nil, cmdNoReturn})
 }
 
@@ -171,24 +171,6 @@ func (cl *CommandList) Repeat(repeat bool) {
 	}
 }
 
-// Single enables single song mode, if single is true, disables it otherwise.
-func (cl *CommandList) Single(single bool) {
-	if single {
-		cl.cmdQ.PushBack(&command{"single 1", nil, cmdNoReturn})
-	} else {
-		cl.cmdQ.PushBack(&command{"single 0", nil, cmdNoReturn})
-	}
-}
-
-// Consume enables consume mode, if consume is true, disables it otherwise.
-func (cl *CommandList) Consume(consume bool) {
-	if consume {
-		cl.cmdQ.PushBack(&command{"consume 1", nil, cmdNoReturn})
-	} else {
-		cl.cmdQ.PushBack(&command{"consume 0", nil, cmdNoReturn})
-	}
-}
-
 //
 // Playlist related functions
 //
@@ -208,8 +190,8 @@ func (cl *CommandList) Delete(start, end int) error {
 	return nil
 }
 
-// DeleteID deletes the song identified by id.
-func (cl *CommandList) DeleteID(id int) {
+// DeleteId deletes the song identified by id.
+func (cl *CommandList) DeleteId(id int) {
 	cl.cmdQ.PushBack(&command{fmt.Sprintf("deleteid %d", id), nil, cmdNoReturn})
 }
 
@@ -227,8 +209,8 @@ func (cl *CommandList) Move(start, end, position int) error {
 	return nil
 }
 
-// MoveID moves songid to position on the playlist.
-func (cl *CommandList) MoveID(songid, position int) {
+// MoveId moves songid to position on the playlist.
+func (cl *CommandList) MoveId(songid, position int) {
 	cl.cmdQ.PushBack(&command{fmt.Sprintf("moveid %d %d", songid, position), nil, cmdNoReturn})
 }
 
@@ -237,11 +219,11 @@ func (cl *CommandList) Add(uri string) {
 	cl.cmdQ.PushBack(&command{fmt.Sprintf("add %s", quote(uri)), nil, cmdNoReturn})
 }
 
-// AddID adds the file/directory uri to playlist and returns the identity
+// AddId adds the file/directory uri to playlist and returns the identity
 // id of the song added. If pos is positive, the song is added to position
 // pos.
-func (cl *CommandList) AddID(uri string, pos int) *PromisedID {
-	var id PromisedID = -1
+func (cl *CommandList) AddId(uri string, pos int) *PromisedId {
+	var id PromisedId = -1
 	if pos >= 0 {
 		cl.cmdQ.PushBack(&command{fmt.Sprintf("addid %s %d", quote(uri), pos), &id, cmdIDReturn})
 	} else {
@@ -261,9 +243,8 @@ func (cl *CommandList) Clear() {
 func (cl *CommandList) Shuffle(start, end int) {
 	if start < 0 || end < 0 {
 		cl.cmdQ.PushBack(&command{"shuffle", nil, cmdNoReturn})
-		return
 	}
-	cl.cmdQ.PushBack(&command{fmt.Sprintf("shuffle %d:%d", start, end), nil, cmdNoReturn})
+	cl.cmdQ.PushBack(&command{fmt.Sprintf("shuffe %d:%d", start, end), nil, cmdNoReturn})
 }
 
 // Update updates MPD's database: find new files, remove deleted files, update
@@ -384,11 +365,16 @@ func (cl *CommandList) End() error {
 			if ridErr != nil {
 				return ridErr
 			}
-			*(e.Value.(*command).promise.(*PromisedID)) = PromisedID(rid)
+			*(e.Value.(*command).promise.(*PromisedId)) = (PromisedId)(rid)
 
 		}
 	}
 
 	// Finalize the command list with the last OK:
-	return cl.client.readOKLine("OK")
+	if cerr := cl.client.readOKLine("OK"); cerr != nil {
+		return cerr
+	}
+
+	return nil
+
 }

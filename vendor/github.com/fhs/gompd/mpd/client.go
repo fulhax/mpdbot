@@ -14,6 +14,9 @@ import (
 	"strings"
 )
 
+// BUG(fhs): Initialism is used for several methods with "ID" in the name
+// (e.g. PlayId should be PlayID).
+
 // Quote quotes strings in the format understood by MPD.
 // See: http://git.musicpd.org/cgit/master/mpd.git/tree/src/util/Tokenizer.cxx
 func quote(s string) string {
@@ -30,16 +33,6 @@ func quote(s string) string {
 	}
 	q[i], i = '"', i+1
 	return string(q[:i])
-}
-
-// Quote quotes each string of args in the format understood by MPD.
-// See: http://git.musicpd.org/cgit/master/mpd.git/tree/src/util/Tokenizer.cxx
-func quoteArgs(args []string) string {
-	quoted := make([]string, len(args))
-	for index, arg := range args {
-		quoted[index] = quote(arg)
-	}
-	return strings.Join(quoted, " ")
 }
 
 // Client represents a client connection to a MPD server.
@@ -276,9 +269,9 @@ func (c *Client) Play(pos int) error {
 	return c.okCmd("play %d", pos)
 }
 
-// PlayID plays the song identified by id. If id is negative, start playing
+// PlayId plays the song identified by id. If id is negative, start playing
 // at the current position in playlist.
-func (c *Client) PlayID(id int) error {
+func (c *Client) PlayId(id int) error {
 	if id < 0 {
 		return c.okCmd("playid")
 	}
@@ -295,9 +288,9 @@ func (c *Client) Seek(pos, time int) error {
 	return c.okCmd("seek %d %d", pos, time)
 }
 
-// SeekID is identical to Seek except the song is identified by it's id
+// SeekId is identical to Seek except the song is identified by it's id
 // (not position in playlist).
-func (c *Client) SeekID(id, time int) error {
+func (c *Client) SeekId(id, time int) error {
 	return c.okCmd("seekid %d %d", id, time)
 }
 
@@ -325,22 +318,6 @@ func (c *Client) Repeat(repeat bool) error {
 		return c.okCmd("repeat 1")
 	}
 	return c.okCmd("repeat 0")
-}
-
-// Single enables single song mode, if single is true, disables it otherwise.
-func (c *Client) Single(single bool) error {
-	if single {
-		return c.okCmd("single 1")
-	}
-	return c.okCmd("single 0")
-}
-
-// Consume enables consume mode, if consume is true, disables it otherwise.
-func (c *Client) Consume(consume bool) error {
-	if consume {
-		return c.okCmd("consume 1")
-	}
-	return c.okCmd("consume 0")
 }
 
 //
@@ -394,8 +371,8 @@ func (c *Client) Delete(start, end int) error {
 	return c.okCmd("delete %d:%d", start, end)
 }
 
-// DeleteID deletes the song identified by id.
-func (c *Client) DeleteID(id int) error {
+// DeleteId deletes the song identified by id.
+func (c *Client) DeleteId(id int) error {
 	return c.okCmd("deleteid %d", id)
 }
 
@@ -411,8 +388,8 @@ func (c *Client) Move(start, end, position int) error {
 	return c.okCmd("move %d:%d %d", start, end, position)
 }
 
-// MoveID moves songid to position on the plyalist.
-func (c *Client) MoveID(songid, position int) error {
+// MoveId moves songid to position on the plyalist.
+func (c *Client) MoveId(songid, position int) error {
 	return c.okCmd("moveid %d %d", songid, position)
 }
 
@@ -421,17 +398,16 @@ func (c *Client) Add(uri string) error {
 	return c.okCmd("add %s", quote(uri))
 }
 
-// AddID adds the file/directory uri to playlist and returns the identity
+// AddId adds the file/directory uri to playlist and returns the identity
 // id of the song added. If pos is positive, the song is added to position
 // pos.
-func (c *Client) AddID(uri string, pos int) (int, error) {
+func (c *Client) AddId(uri string, pos int) (int, error) {
 	var id uint
 	var err error
 	if pos >= 0 {
 		id, err = c.cmd("addid %s %d", quote(uri), pos)
-	} else {
-		id, err = c.cmd("addid %s", quote(uri))
 	}
+	id, err = c.cmd("addid %s", quote(uri))
 	if err != nil {
 		return -1, err
 	}
@@ -482,7 +458,7 @@ func (c *Client) GetFiles() ([]string, error) {
 // modified files. uri is a particular directory or file to update. If it is an
 // empty string, everything is updated.
 //
-// The returned jobID identifies the update job, enqueued by MPD.
+// The returned jobId identifies the update job, enqueued by MPD.
 func (c *Client) Update(uri string) (jobID int, err error) {
 	id, err := c.cmd("update %s", quote(uri))
 	if err != nil {
@@ -574,23 +550,11 @@ func (c *Client) ListInfo(uri string) ([]Attrs, error) {
 	return attrs, nil
 }
 
-// ReadComments reads "comments" (audio metadata) from the song URI using
-// MPD's readcomments command.
-func (c *Client) ReadComments(uri string) (Attrs, error) {
-	id, err := c.cmd("readcomments %s", quote(uri))
-	if err != nil {
-		return nil, err
-	}
-	c.text.StartResponse(id)
-	defer c.text.EndResponse(id)
-	return c.readAttrs("OK")
-}
-
 // Find returns attributes for songs in the library. You can find songs that
 // belong to an artist and belong to the album by searching:
 // `find artist "<Artist>" album "<Album>"`
-func (c *Client) Find(args ...string) ([]Attrs, error) {
-	id, err := c.cmd("find " + quoteArgs(args))
+func (c *Client) Find(uri string) ([]Attrs, error) {
+	id, err := c.cmd("find " + quote(uri))
 	if err != nil {
 		return nil, err
 	}
@@ -603,8 +567,8 @@ func (c *Client) Find(args ...string) ([]Attrs, error) {
 // List searches the database for your query. You can use something simple like
 // `artist` for your search, or something like `artist album <Album Name>` if
 // you want the artist that has an album with a specified album name.
-func (c *Client) List(args ...string) ([]string, error) {
-	id, err := c.cmd("list " + quoteArgs(args))
+func (c *Client) List(uri string) ([]string, error) {
+	id, err := c.cmd("list " + quote(uri))
 	if err != nil {
 		return nil, err
 	}

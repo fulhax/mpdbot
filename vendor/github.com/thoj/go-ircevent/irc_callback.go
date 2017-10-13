@@ -13,17 +13,13 @@ import (
 func (irc *Connection) AddCallback(eventcode string, callback func(*Event)) int {
 	eventcode = strings.ToUpper(eventcode)
 	id := 0
-
-	irc.eventsMutex.Lock()
-	_, ok := irc.events[eventcode]
-	if !ok {
+	if _, ok := irc.events[eventcode]; !ok {
 		irc.events[eventcode] = make(map[int]func(*Event))
 		id = 0
 	} else {
 		id = len(irc.events[eventcode])
 	}
 	irc.events[eventcode][id] = callback
-	irc.eventsMutex.Unlock()
 	return id
 }
 
@@ -32,20 +28,15 @@ func (irc *Connection) AddCallback(eventcode string, callback func(*Event)) int 
 func (irc *Connection) RemoveCallback(eventcode string, i int) bool {
 	eventcode = strings.ToUpper(eventcode)
 
-	irc.eventsMutex.Lock()
-	event, ok := irc.events[eventcode]
-	if ok {
+	if event, ok := irc.events[eventcode]; ok {
 		if _, ok := event[i]; ok {
 			delete(irc.events[eventcode], i)
-			irc.eventsMutex.Unlock()
 			return true
 		}
 		irc.Log.Printf("Event found, but no callback found at id %d\n", i)
-		irc.eventsMutex.Unlock()
 		return false
 	}
 
-	irc.eventsMutex.Unlock()
 	irc.Log.Println("Event not found")
 	return false
 }
@@ -55,14 +46,10 @@ func (irc *Connection) RemoveCallback(eventcode string, i int) bool {
 func (irc *Connection) ClearCallback(eventcode string) bool {
 	eventcode = strings.ToUpper(eventcode)
 
-	irc.eventsMutex.Lock()
-	_, ok := irc.events[eventcode]
-	if ok {
+	if _, ok := irc.events[eventcode]; ok {
 		irc.events[eventcode] = make(map[int]func(*Event))
-		irc.eventsMutex.Unlock()
 		return true
 	}
-	irc.eventsMutex.Unlock()
 
 	irc.Log.Println("Event not found")
 	return false
@@ -72,10 +59,7 @@ func (irc *Connection) ClearCallback(eventcode string) bool {
 func (irc *Connection) ReplaceCallback(eventcode string, i int, callback func(*Event)) {
 	eventcode = strings.ToUpper(eventcode)
 
-	irc.eventsMutex.Lock()
-	event, ok := irc.events[eventcode]
-	irc.eventsMutex.Unlock()
-	if ok {
+	if event, ok := irc.events[eventcode]; ok {
 		if _, ok := event[i]; ok {
 			event[i] = callback
 			return
@@ -125,10 +109,7 @@ func (irc *Connection) RunCallbacks(event *Event) {
 		event.Arguments[len(event.Arguments)-1] = msg
 	}
 
-	irc.eventsMutex.Lock()
-	callbacks, ok := irc.events[event.Code]
-	irc.eventsMutex.Unlock()
-	if ok {
+	if callbacks, ok := irc.events[event.Code]; ok {
 		if irc.VerboseCallbackHandler {
 			irc.Log.Printf("%v (%v) >> %#v\n", event.Code, len(callbacks), event)
 		}
@@ -140,15 +121,12 @@ func (irc *Connection) RunCallbacks(event *Event) {
 		irc.Log.Printf("%v (0) >> %#v\n", event.Code, event)
 	}
 
-	irc.eventsMutex.Lock()
-	allcallbacks, ok := irc.events["*"]
-	irc.eventsMutex.Unlock()
-	if ok {
+	if callbacks, ok := irc.events["*"]; ok {
 		if irc.VerboseCallbackHandler {
 			irc.Log.Printf("%v (0) >> %#v\n", event.Code, event)
 		}
 
-		for _, callback := range allcallbacks {
+		for _, callback := range callbacks {
 			callback(event)
 		}
 	}
@@ -158,8 +136,9 @@ func (irc *Connection) RunCallbacks(event *Event) {
 func (irc *Connection) setupCallbacks() {
 	irc.events = make(map[string]map[int]func(*Event))
 
-	//Handle error events.
-	irc.AddCallback("ERROR", func(e *Event) { irc.Disconnect() })
+	//Handle error events. This has to be called in a new thred to allow
+	//readLoop to exit
+	irc.AddCallback("ERROR", func(e *Event) { go irc.Disconnect() })
 
 	//Handle ping events
 	irc.AddCallback("PING", func(e *Event) { irc.SendRaw("PONG :" + e.Message()) })
@@ -222,7 +201,7 @@ func (irc *Connection) setupCallbacks() {
 		ns, _ := strconv.ParseInt(e.Message(), 10, 64)
 		delta := time.Duration(time.Now().UnixNano() - ns)
 		if irc.Debug {
-			irc.Log.Printf("Lag: %.3f s\n", delta.Seconds())
+			irc.Log.Printf("Lag: %vs\n", delta)
 		}
 	})
 
@@ -237,8 +216,6 @@ func (irc *Connection) setupCallbacks() {
 	// 1: RPL_WELCOME "Welcome to the Internet Relay Network <nick>!<user>@<host>"
 	// Set irc.nickcurrent to the actually used nick in this connection.
 	irc.AddCallback("001", func(e *Event) {
-		irc.Lock()
 		irc.nickcurrent = e.Arguments[0]
-		irc.Unlock()
 	})
 }

@@ -82,7 +82,6 @@ func (q *QueueHandler) handlePlaylist() (err error) {
 		return err
 	}
 	defer w.Close()
-	fmt.Println("Listen")
 
 	go func() {
 		for err := range w.Error {
@@ -97,8 +96,6 @@ func (q *QueueHandler) handlePlaylist() (err error) {
 			fmt.Println("Added song")
 			q.queueNextSong()
 			q.MpdClient.Play(pPos)
-			// fmt.Println("stop")
-
 		}
 	}
 
@@ -112,7 +109,10 @@ func (q *QueueHandler) queueNextSong() {
 		q.MpdClient.AddSong(next.File)
 
 	} else {
-		// Get random song.
+		song, err := q.MpdClient.GetRandomSong()
+		if err == nil {
+			q.MpdClient.AddSong(song)
+		}
 	}
 
 	return

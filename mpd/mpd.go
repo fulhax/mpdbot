@@ -2,6 +2,7 @@ package mpd
 
 import (
 	"fmt"
+	"math/rand"
 	"sort"
 	"strconv"
 	"time"
@@ -51,7 +52,7 @@ func NewMpdClient(addr string) (*MpdClient, error) {
 }
 
 func (c *MpdClient) searchInLibrary(search string) ([]rankItem, error) {
-	songs, err := c.con.ListAllInfo("")
+	songs, err := c.GetAllSongs()
 	if err != nil {
 		return nil, err
 	}
@@ -126,7 +127,6 @@ func (c *MpdClient) GetStatus() (MpdStatus, error) {
 
 func (c *MpdClient) GetState() string {
 	return ""
-
 }
 
 func (c *MpdClient) CurrentSong() (string, error) {
@@ -136,4 +136,29 @@ func (c *MpdClient) CurrentSong() (string, error) {
 	}
 
 	return fmt.Sprintf("%s - %s", song["Artist"], song["Title"]), nil
+}
+
+// GetRandomSong returns random song from mpd library
+func (c *MpdClient) GetRandomSong() (string, error) {
+	songs, err := c.GetAllSongs()
+
+	if err != nil {
+		return "", err
+	}
+
+	rand.Seed(time.Now().Unix())
+	r := rand.Intn(len(songs) - 1)
+
+	return songs[r]["file"], nil
+}
+
+// GetAllSongs returns all songs in MPD library
+func (c *MpdClient) GetAllSongs() ([]mpd.Attrs, error) {
+	c.con.ListAllInfo("/")
+	songs, err := c.con.ListAllInfo("")
+	if err != nil {
+		return nil, err
+	}
+
+	return songs, nil
 }

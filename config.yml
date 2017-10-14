@@ -1,0 +1,6 @@
+debug: false
+mpd: 127.0.0.1:6600
+httpPort: 8080
+ircEnabled: true
+ircNick: "mpdbot"
+ircServer: 127.0.0.1:6697

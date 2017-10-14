@@ -25,7 +25,7 @@ func addToPlayerlistHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func status(w http.ResponseWriter, r *http.Request) {
-	mpdcon, err := mpd.Dial("tcp", *mpdAddr)
+	mpdcon, err := mpd.Dial("tcp", config.Mpd)
 	defer mpdcon.Close()
 	if err != nil {
 		log.Fatal(err)
@@ -53,7 +53,7 @@ func searchAndAdd(w http.ResponseWriter, r *http.Request) {
 }
 
 func getPlaylist(w http.ResponseWriter, r *http.Request) {
-	mpdcon, err := mpd.Dial("tcp", *mpdAddr)
+	mpdcon, err := mpd.Dial("tcp", config.Mpd)
 	defer mpdcon.Close()
 	if err != nil {
 		log.Fatal(err)
@@ -72,7 +72,7 @@ func getPlaylist(w http.ResponseWriter, r *http.Request) {
 }
 
 func getNowPlayingHandler(w http.ResponseWriter, r *http.Request) {
-	mpdcon, err := mpd.Dial("tcp", *mpdAddr)
+	mpdcon, err := mpd.Dial("tcp", config.Mpd)
 	defer mpdcon.Close()
 	if err != nil {
 		log.Fatal(err)
@@ -109,7 +109,7 @@ func getNowPlayingHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func playNextSongHandler(w http.ResponseWriter, r *http.Request) {
-	mpdcon, err := mpd.Dial("tcp", *mpdAddr)
+	mpdcon, err := mpd.Dial("tcp", config.Mpd)
 	defer mpdcon.Close()
 	if err != nil {
 		log.Fatal(err)

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"regexp"
 
 	"github.com/fulhax/mpdbot/ircbot"
@@ -21,7 +22,7 @@ func (i *IrcMpdNp) Usage() string {
 }
 
 func (i *IrcMpdNp) Match(e *irc.Event) bool {
-	m, err := regexp.MatchString("^!np", e.Nick)
+	m, err := regexp.MatchString("^!np", e.Message())
 
 	if err != nil {
 		return false
@@ -30,6 +31,7 @@ func (i *IrcMpdNp) Match(e *irc.Event) bool {
 	return m
 }
 
+// TODO include state in response
 func (i *IrcMpdNp) HandleMessage(ev *irc.Event, ib *ircbot.Ircbot) {
 	song, err := i.mpdClient.CurrentSong()
 	if err == nil {

@@ -79,6 +79,7 @@ func main() {
 	}
 
 	irc.AddCommand(&IrcMpdNp{mpdClient})
+	irc.AddCommand(&IrcAddSong{mpdClient})
 
 	queueHandler = &mpd.QueueHandler{MpdClient: mpdClient}
 	queueHandler.Init()

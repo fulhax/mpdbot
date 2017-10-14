@@ -3,20 +3,11 @@ package main
 import (
 	"log"
 	"net/http"
-
-	"github.com/fhs/gompd/mpd"
 )
 
-type Song struct {
-	Artist string
-	Song   string
-	Album  string
-	Date   string
-	Genre  string
-}
 type NowPlayingResponse struct {
 	State string
-	Song  Song
+	Song  string
 }
 
 // TODO: create mpd object with connection and stuff.
@@ -25,14 +16,7 @@ func addToPlayerlistHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func status(w http.ResponseWriter, r *http.Request) {
-	mpdcon, err := mpd.Dial("tcp", config.Mpd)
-	defer mpdcon.Close()
-	if err != nil {
-		log.Fatal(err)
-		errorHandler(w, r, http.StatusBadRequest)
-		return
-	}
-	status, err := mpdcon.Status()
+	status, err := mpdClient.GetStatus()
 	if err != nil {
 		log.Fatal(err)
 		errorHandler(w, r, http.StatusBadRequest)
@@ -53,15 +37,7 @@ func searchAndAdd(w http.ResponseWriter, r *http.Request) {
 }
 
 func getPlaylist(w http.ResponseWriter, r *http.Request) {
-	mpdcon, err := mpd.Dial("tcp", config.Mpd)
-	defer mpdcon.Close()
-	if err != nil {
-		log.Fatal(err)
-		errorHandler(w, r, http.StatusBadRequest)
-		return
-	}
-
-	items, err := mpdcon.PlaylistInfo(-1, -1)
+	items, err := mpdClient.GetPlaylist()
 	if err != nil {
 		log.Fatal(err)
 		errorHandler(w, r, http.StatusBadRequest)
@@ -72,22 +48,15 @@ func getPlaylist(w http.ResponseWriter, r *http.Request) {
 }
 
 func getNowPlayingHandler(w http.ResponseWriter, r *http.Request) {
-	mpdcon, err := mpd.Dial("tcp", config.Mpd)
-	defer mpdcon.Close()
+
+	status, err := mpdClient.GetStatus()
 	if err != nil {
 		log.Fatal(err)
 		errorHandler(w, r, http.StatusBadRequest)
 		return
 	}
 
-	status, err := mpdcon.Status()
-	if err != nil {
-		log.Fatal(err)
-		errorHandler(w, r, http.StatusBadRequest)
-		return
-	}
-
-	song, err := mpdcon.CurrentSong()
+	song, err := mpdClient.CurrentSong()
 	if err != nil {
 		log.Fatal(err)
 		errorHandler(w, r, http.StatusBadRequest)
@@ -95,49 +64,26 @@ func getNowPlayingHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := NowPlayingResponse{
-		status["state"],
-		Song{
-			song["Artist"],
-			song["Title"],
-			song["Album"],
-			song["Date"],
-			song["Genre"],
-		},
+		status.State,
+		song,
 	}
 
 	serveJSON(w, r, resp)
 }
 
 func playNextSongHandler(w http.ResponseWriter, r *http.Request) {
-	mpdcon, err := mpd.Dial("tcp", config.Mpd)
-	defer mpdcon.Close()
+	err := mpdClient.Next()
+	if err != nil {
+		errorHandler(w, r, http.StatusBadRequest)
+		return
+	}
+
+	song, err := mpdClient.CurrentSong()
 	if err != nil {
 		log.Fatal(err)
 		errorHandler(w, r, http.StatusBadRequest)
 		return
 	}
 
-	err = mpdcon.Next()
-	if err != nil {
-		// 	log.Fatal(err)
-		// 	errorHandler(w, r, http.StatusBadRequest)
-		return
-	}
-
-	song, err := mpdcon.CurrentSong()
-	if err != nil {
-		log.Fatal(err)
-		errorHandler(w, r, http.StatusBadRequest)
-		return
-	}
-
-	resp := Song{
-		song["Artist"],
-		song["Title"],
-		song["Album"],
-		song["Date"],
-		song["Genre"],
-	}
-
-	serveJSON(w, r, resp)
+	serveJSON(w, r, song)
 }

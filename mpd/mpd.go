@@ -162,3 +162,30 @@ func (c *MpdClient) GetAllSongs() ([]mpd.Attrs, error) {
 
 	return songs, nil
 }
+
+func (c *MpdClient) GetPlaylist() ([]mpd.Attrs, error) {
+	items, err := c.con.PlaylistInfo(-1, -1)
+	if err != nil {
+		return nil, err
+	}
+
+	return items, nil
+}
+
+func (c *MpdClient) Next() error {
+	err := c.con.Next()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (c *MpdClient) Previous() error {
+	err := c.con.Previous()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

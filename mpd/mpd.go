@@ -5,6 +5,7 @@ import (
 	"math/rand"
 	"sort"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/fhs/gompd/mpd"
@@ -59,11 +60,13 @@ func (c *MpdClient) searchInLibrary(search string) ([]rankItem, error) {
 
 	var items []rankItem
 
+	search = strings.ToLower(search)
+
 	for _, song := range songs {
 		if _, exists := song["file"]; exists {
 			rank := fuzzy.RankMatch(
 				search,
-				song["file"],
+				strings.ToLower(song["file"]),
 			)
 
 			if rank != -1 {

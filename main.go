@@ -78,6 +78,11 @@ func initConfig() {
 	flag.String("ircNick", "mpdbot", "Irc nick")
 	flag.String("ircServer", "127.0.0.1:6697", "irc server")
 	flag.Parse()
+
+	viper.BindPFlag("debug", flag.Lookup("debug"))
+	viper.BindPFlag("mpd", flag.Lookup("mpd"))
+	viper.BindPFlag("httpPort", flag.Lookup("httpPort"))
+	viper.BindPFlag("ircServer", flag.Lookup("ircServer"))
 	viper.BindPFlag("ircNick", flag.Lookup("ircNick"))
 
 	viper.SetConfigName("config")

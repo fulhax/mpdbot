@@ -15,12 +15,14 @@ import (
 )
 
 type mpdbotConfig struct {
-	Debug      bool
-	Mpd        string
-	HttpPort   string
-	IrcEnabled bool
-	IrcNick    string
-	IrcServer  string
+	Debug       bool
+	Mpd         string
+	MpdPassword string
+	HttpPort    string
+	IrcEnabled  bool
+	IrcNick     string
+	IrcTls      bool
+	IrcServer   string
 }
 
 var (
@@ -73,16 +75,20 @@ func initConfig() {
 
 	flag.Bool("debug", false, "Enable debug mode")
 	flag.String("mpd", "127.0.0.1:6600", "mpd host")
+	flag.String("mpdPassword", "", "mpd password")
 	flag.String("httpPort", "8888", "Http port")
 	flag.Bool("ircEnabled", true, "Enable irc bot")
 	flag.String("ircNick", "mpdbot", "Irc nick")
 	flag.String("ircServer", "127.0.0.1:6697", "irc server")
+	flag.Bool("ircTls", true, "irc tls")
 	flag.Parse()
 
 	viper.BindPFlag("debug", flag.Lookup("debug"))
 	viper.BindPFlag("mpd", flag.Lookup("mpd"))
+	viper.BindPFlag("mpdPassword", flag.Lookup("mpdPassword"))
 	viper.BindPFlag("httpPort", flag.Lookup("httpPort"))
 	viper.BindPFlag("ircServer", flag.Lookup("ircServer"))
+	viper.BindPFlag("ircTls", flag.Lookup("ircTls"))
 	viper.BindPFlag("ircNick", flag.Lookup("ircNick"))
 
 	viper.SetConfigName("config")
@@ -104,17 +110,19 @@ func initConfig() {
 func main() {
 	initConfig()
 
-	mpdClient, err := mpd.NewMpdClient(config.Mpd)
+	mpdClient, err := mpd.NewMpdClient(config.Mpd, config.MpdPassword)
 	if err != nil {
-		fmt.Println(err)
+		panic(err)
 		return
 	}
+	fmt.Println(config.MpdPassword)
 
 	queueHandler = &mpd.QueueHandler{MpdClient: mpdClient}
 	queueHandler.Init()
 
 	if config.IrcEnabled {
-		irc := ircbot.New(config.IrcNick, config.IrcServer, true)
+		fmt.Println(config.IrcTls)
+		irc := ircbot.New(config.IrcNick, config.IrcServer, config.IrcTls)
 		irc.AddCommand(&irccmd.Usage{})
 		irc.AddCommand(&IrcMpdNp{mpdClient})
 		irc.AddCommand(&IrcAddSong{mpdClient})

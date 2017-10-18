@@ -77,7 +77,7 @@ func (q *QueueHandler) pullNextSong() (file QueueItem, err error) {
 
 // Handle mpd playlist and add new songs from queue
 func (q *QueueHandler) handlePlaylist() (err error) {
-	w, err := mpd.NewWatcher("tcp", q.MpdClient.addr, "")
+	w, err := mpd.NewWatcher("tcp", q.MpdClient.addr, q.MpdClient.password)
 	if err != nil {
 		return err
 	}

@@ -1,6 +1,7 @@
 package ircbot
 
 import (
+	"crypto/tls"
 	"errors"
 	"fmt"
 
@@ -22,14 +23,15 @@ type Command interface {
 	Usage() string
 }
 
-func New(nick string, srv string, tls bool) *Ircbot {
+func New(nick string, srv string, enableTls bool) *Ircbot {
 	ib := Ircbot{
-		tls:    tls,
+		tls:    enableTls,
 		server: srv,
 	}
 
 	ib.con = irc.IRC(nick, nick)
-	ib.con.UseTLS = true
+	ib.con.UseTLS = ib.tls
+	ib.con.TLSConfig = &tls.Config{InsecureSkipVerify: true}
 	ib.con.AddCallback("PRIVMSG", ib.handleMessage)
 	ib.Init()
 	return &ib

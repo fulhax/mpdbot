@@ -13,8 +13,9 @@ import (
 )
 
 type MpdClient struct {
-	addr string
-	con  *mpd.Client
+	addr     string
+	password string
+	con      *mpd.Client
 }
 
 type rankItem struct {
@@ -31,16 +32,17 @@ type MpdStatus struct {
 	Song           int
 }
 
-func NewMpdClient(addr string) (*MpdClient, error) {
-	client, err := mpd.Dial("tcp", addr)
+func NewMpdClient(addr string, password string) (*MpdClient, error) {
+	client, err := mpd.DialAuthenticated("tcp", addr, password)
 
 	if err != nil {
 		return nil, err
 	}
 
 	c := &MpdClient{
-		addr: addr,
-		con:  client,
+		addr:     addr,
+		password: password,
+		con:      client,
 	}
 
 	go func() {

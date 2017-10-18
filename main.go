@@ -126,6 +126,7 @@ func main() {
 		irc.AddCommand(&irccmd.Usage{})
 		irc.AddCommand(&IrcMpdNp{mpdClient})
 		irc.AddCommand(&IrcAddSong{mpdClient})
+		irc.AddCommand(&IrcMpdUpdate{mpdClient})
 	}
 
 	serveApi()

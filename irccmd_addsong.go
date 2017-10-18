@@ -33,7 +33,7 @@ func (i *IrcAddSong) Match(e *irc.Event) bool {
 }
 
 func (i *IrcAddSong) HandleMessage(ev *irc.Event, ib *ircbot.Ircbot) {
-	re := regexp.MustCompile("!mpd add ([A-z0-9 \\.\\,\\-]+)")
+	re := regexp.MustCompile("!mpd add (.+)")
 	m := re.FindStringSubmatch(ev.Message())
 
 	if len(m) == 0 {

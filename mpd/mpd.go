@@ -186,6 +186,15 @@ func (c *MpdClient) Next() error {
 	return nil
 }
 
+func (c *MpdClient) Update() error {
+	_, err := c.con.Update("")
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (c *MpdClient) Previous() error {
 	err := c.con.Previous()
 	if err != nil {

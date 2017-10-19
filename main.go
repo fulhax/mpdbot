@@ -115,13 +115,11 @@ func main() {
 		panic(err)
 		return
 	}
-	fmt.Println(config.MpdPassword)
 
 	queueHandler = &mpd.QueueHandler{MpdClient: mpdClient}
 	queueHandler.Init()
 
 	if config.IrcEnabled {
-		fmt.Println(config.IrcTls)
 		irc := ircbot.New(config.IrcNick, config.IrcServer, config.IrcTls)
 		irc.AddCommand(&irccmd.Usage{})
 		irc.AddCommand(&IrcMpdNp{mpdClient})

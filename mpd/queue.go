@@ -92,10 +92,9 @@ func (q *QueueHandler) handlePlaylist() (err error) {
 	for range w.Event {
 		status, _ := q.MpdClient.GetStatus()
 		if status.State == "stop" {
-			pPos := status.PlaylistLength
-			fmt.Println("Added song")
+			q.MpdClient.ClearPlaylist()
 			q.queueNextSong()
-			q.MpdClient.Play(pPos)
+			q.MpdClient.Play(0)
 		}
 	}
 

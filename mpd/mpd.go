@@ -203,3 +203,12 @@ func (c *MpdClient) Previous() error {
 
 	return nil
 }
+
+func (c *MpdClient) ClearPlaylist() error {
+	status, err := c.GetStatus()
+	if err != nil {
+		return err
+	}
+
+	return c.con.Delete(0, status.PlaylistLength)
+}

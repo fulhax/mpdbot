@@ -106,7 +106,7 @@ func (q *QueueHandler) queueNextSong() {
 
 	if next.File != "" {
 		q.MpdClient.AddSong(next.File)
-
+		q.currentUser = next.User
 	} else {
 		song, err := q.MpdClient.GetRandomSong()
 		if err == nil {

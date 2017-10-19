@@ -19,8 +19,9 @@ type MpdClient struct {
 }
 
 type rankItem struct {
-	File string
-	Rank int
+	Title string
+	File  string
+	Rank  int
 }
 
 type MpdStatus struct {
@@ -66,15 +67,23 @@ func (c *MpdClient) searchInLibrary(search string) ([]rankItem, error) {
 
 	for _, song := range songs {
 		if _, exists := song["file"]; exists {
+			title := ""
+			if song["Title"] != "" && song["Artist"] != "" {
+				title = fmt.Sprintf("%s - %s", song["Artist"], song["Title"])
+			} else {
+				title = song["file"]
+			}
+
 			rank := fuzzy.RankMatch(
 				search,
-				strings.ToLower(song["file"]),
+				strings.ToLower(title),
 			)
 
 			if rank != -1 {
 				items = append(items, rankItem{
-					File: song["file"],
-					Rank: rank,
+					File:  song["file"],
+					Title: title,
+					Rank:  rank,
 				})
 			}
 		}

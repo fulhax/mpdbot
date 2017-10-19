@@ -46,7 +46,7 @@ func (i *IrcAddSong) HandleMessage(ev *irc.Event, ib *ircbot.Ircbot) {
 	}
 
 	if file.File != "" {
-		msg := fmt.Sprintf("Added %s to queue", file.File)
+		msg := fmt.Sprintf("Added %s to queue", file.Title)
 		ib.SendMessage(
 			ev.Arguments[0],
 			ircFormat.Colorize(msg, ircFormat.Green, ircFormat.None),

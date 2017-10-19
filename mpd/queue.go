@@ -18,6 +18,7 @@ type QueueHandler struct {
 type QueueItem struct {
 	User  string
 	File  string
+	Title string
 	Added time.Time
 }
 
@@ -47,6 +48,7 @@ func (q *QueueHandler) AddToQueue(user string, song string) (QueueItem, error) {
 			item := QueueItem{
 				User:  user,
 				File:  sr[0].File,
+				Title: sr[0].Title,
 				Added: time.Now(),
 			}
 			q.queue = append(q.queue, item)

@@ -1,4 +1,5 @@
 builds:
+  -
     main: ./cmd/mpdbot/mpdbot.go
     env:
       - CGO_ENABLED=1
@@ -10,9 +11,14 @@ builds:
       - amd64
       - arm
       - arm64
-
 archive:
   files:
     - LICENSE.txt
     - README.md
     - config.yml
+release:
+  github:
+    owner: fulhax
+    name: mpdbot
+
+  draft: true

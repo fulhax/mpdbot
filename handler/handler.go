@@ -5,6 +5,7 @@ import "log"
 import "github.com/gorilla/mux"
 import "encoding/json"
 import "github.com/fulhax/mpdbot/mpd"
+import "github.com/fulhax/mpdbot/mpd/statistics"
 
 type handler struct {
 	mpdClient    *mpd.MpdClient
@@ -25,6 +26,7 @@ func New(m *mpd.MpdClient, q *mpd.QueueHandler) *mux.Router {
 	r.HandleFunc("/add", jsonResponseHandler(h.searchAndAdd)).Methods("GET")
 	r.HandleFunc("/search", jsonResponseHandler(h.search)).Methods("GET")
 	r.HandleFunc("/status", jsonResponseHandler(h.status)).Methods("GET")
+	r.HandleFunc("/top", jsonResponseHandler(h.toplist)).Methods("GET")
 
 	return r
 }
@@ -111,4 +113,23 @@ func (h handler) playNextSong(w http.ResponseWriter, r *http.Request) (interface
 	}
 
 	return song, http.StatusOK, nil
+}
+
+func (h handler) toplist(w http.ResponseWriter, r *http.Request) (interface{}, int, error) {
+	user := r.FormValue("search")
+
+	var items []statistics.SongStats
+	var err error
+
+	if user != "" {
+		items, err = h.queueHandler.StatsStorage.GetUserTop(user, 25)
+	} else {
+		items, err = h.queueHandler.StatsStorage.GetTop(25)
+	}
+
+	if err != nil {
+		return nil, http.StatusBadRequest, err
+	}
+
+	return items, http.StatusOK, nil
 }

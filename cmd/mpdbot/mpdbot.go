@@ -8,6 +8,7 @@ import (
 	"github.com/fulhax/mpdbot/handler"
 	"github.com/fulhax/mpdbot/irccmd"
 	"github.com/fulhax/mpdbot/mpd"
+	"github.com/fulhax/mpdbot/mpd/statistics/sqlite"
 	"github.com/rendom/ircbot"
 	ircbotcmd "github.com/rendom/ircbot/cmd"
 	flag "github.com/spf13/pflag"
@@ -23,6 +24,7 @@ type mpdbotConfig struct {
 	IrcNick     string
 	IrcTLS      bool
 	IrcServer   string
+	StatsDB     string
 }
 
 var (
@@ -36,7 +38,7 @@ func serveHTTP() {
 	http.Handle("/", h)
 
 	addr := fmt.Sprintf(":%s", config.HTTPport)
-	log.Printf("Listening on %s", addr)
+	log.Printf("Listening on %s\n", addr)
 	err := http.ListenAndServe(addr, nil)
 	if err != nil {
 		log.Fatal(err)
@@ -53,6 +55,7 @@ func initConfig() {
 	flag.String("ircNick", "mpdbot", "Irc nick")
 	flag.String("ircServer", "127.0.0.1:6697", "irc server")
 	flag.Bool("ircTls", true, "irc tls")
+	flag.String("statsdb", "./stats.db", "statistics database (sqlite)")
 	flag.Parse()
 
 	viper.BindPFlag("debug", flag.Lookup("debug"))
@@ -62,6 +65,7 @@ func initConfig() {
 	viper.BindPFlag("ircServer", flag.Lookup("ircServer"))
 	viper.BindPFlag("ircTls", flag.Lookup("ircTls"))
 	viper.BindPFlag("ircNick", flag.Lookup("ircNick"))
+	viper.BindPFlag("statsDB", flag.Lookup("statsdb"))
 
 	viper.SetConfigName("config")
 	viper.AddConfigPath("/etc/mpdbot/")
@@ -89,7 +93,15 @@ func main() {
 		return
 	}
 
-	queueHandler = &mpd.QueueHandler{MpdClient: mpdClient}
+	storage, err := sqlite.New(config.StatsDB)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	queueHandler = &mpd.QueueHandler{
+		MpdClient:    mpdClient,
+		StatsStorage: storage,
+	}
 	queueHandler.Init()
 
 	if config.IrcEnabled {
@@ -98,6 +110,7 @@ func main() {
 		irc.AddCommand(irccmd.NewNp(mpdClient))
 		irc.AddCommand(irccmd.NewAddSong(mpdClient, queueHandler))
 		irc.AddCommand(irccmd.NewMpdUpdate(mpdClient))
+		irc.AddCommand(irccmd.NewUserTop(queueHandler))
 	}
 
 	serveHTTP()

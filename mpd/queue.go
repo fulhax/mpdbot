@@ -2,17 +2,20 @@ package mpd
 
 import (
 	"fmt"
+	"github.com/fulhax/mpdbot/mpd/statistics"
 	"time"
 
 	"github.com/fhs/gompd/mpd"
+	"log"
 )
 
 type QueueHandler struct {
-	MpdClient   *MpdClient
-	currentSong string
-	currentUser string
-	lastQueued  string
-	queue       []QueueItem
+	MpdClient    *MpdClient
+	StatsStorage statistics.Storage
+	currentSong  string
+	currentUser  string
+	lastQueued   string
+	queue        []QueueItem
 }
 
 type QueueItem struct {
@@ -52,6 +55,10 @@ func (q *QueueHandler) AddToQueue(user string, song string) (QueueItem, error) {
 				Added: time.Now(),
 			}
 			q.queue = append(q.queue, item)
+			err := q.StatsStorage.AddSong(item.Title, item.File, user)
+			if err != nil {
+				log.Printf("Error while saving statistics: %v\n", err)
+			}
 			return item, nil
 		}
 	}
@@ -115,6 +122,4 @@ func (q *QueueHandler) queueNextSong() {
 			q.MpdClient.AddSong(song)
 		}
 	}
-
-	return
 }

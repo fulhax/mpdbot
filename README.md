@@ -1,4 +1,5 @@
-# mpdbot
+# mpdbot 
+[![Build Status](https://travis-ci.org/fulhax/mpdbot.svg?branch=master)](https://travis-ci.org/fulhax/mpdbot)
 
 Install
 `go install github.com/fulhax/mpdbot/cmd/mpdbot`

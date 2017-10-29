@@ -20,10 +20,10 @@ func New(m *mpd.MpdClient, q *mpd.QueueHandler) *mux.Router {
 	h := handler{m, q}
 	r := mux.NewRouter()
 
-	r.HandleFunc("/playlist", jsonResponseHandler(h.getPlaylist)).Methods("GET")
-	r.HandleFunc("/current", jsonResponseHandler(h.getNowPlayingHandler)).Methods("GET")
-	r.HandleFunc("/next", jsonResponseHandler(h.playNextSongHandler)).Methods("POST")
+	r.HandleFunc("/current", jsonResponseHandler(h.getNowPlaying)).Methods("GET")
+	r.HandleFunc("/next", jsonResponseHandler(h.playNextSong)).Methods("POST")
 	r.HandleFunc("/add", jsonResponseHandler(h.searchAndAdd)).Methods("GET")
+	r.HandleFunc("/search", jsonResponseHandler(h.search)).Methods("GET")
 	r.HandleFunc("/status", jsonResponseHandler(h.status)).Methods("GET")
 
 	return r
@@ -59,6 +59,16 @@ func (h handler) status(w http.ResponseWriter, r *http.Request) (interface{}, in
 	return status, http.StatusOK, nil
 }
 
+func (h handler) search(w http.ResponseWriter, r *http.Request) (interface{}, int, error) {
+	search := r.FormValue("search")
+	result, err := h.mpdClient.SearchInLibrary(search)
+	if err != nil {
+		return nil, http.StatusBadRequest, err
+	}
+
+	return result, http.StatusOK, nil
+}
+
 func (h handler) searchAndAdd(w http.ResponseWriter, r *http.Request) (interface{}, int, error) {
 	search := r.FormValue("search")
 	user := r.FormValue("user")
@@ -70,17 +80,7 @@ func (h handler) searchAndAdd(w http.ResponseWriter, r *http.Request) (interface
 	return file, http.StatusOK, nil
 }
 
-func (h handler) getPlaylist(w http.ResponseWriter, r *http.Request) (interface{}, int, error) {
-	items, err := h.mpdClient.GetPlaylist()
-	if err != nil {
-		return nil, http.StatusBadRequest, err
-	}
-
-	return items, http.StatusOK, nil
-}
-
-func (h handler) getNowPlayingHandler(w http.ResponseWriter, r *http.Request) (interface{}, int, error) {
-
+func (h handler) getNowPlaying(w http.ResponseWriter, r *http.Request) (interface{}, int, error) {
 	status, err := h.mpdClient.GetStatus()
 	if err != nil {
 		return nil, http.StatusBadRequest, err
@@ -99,7 +99,7 @@ func (h handler) getNowPlayingHandler(w http.ResponseWriter, r *http.Request) (i
 	return resp, http.StatusOK, nil
 }
 
-func (h handler) playNextSongHandler(w http.ResponseWriter, r *http.Request) (interface{}, int, error) {
+func (h handler) playNextSong(w http.ResponseWriter, r *http.Request) (interface{}, int, error) {
 	err := h.mpdClient.Next()
 	if err != nil {
 		return nil, http.StatusBadRequest, err

@@ -55,7 +55,7 @@ func NewMpdClient(addr string, password string) (*MpdClient, error) {
 	return c, nil
 }
 
-func (c *MpdClient) searchInLibrary(search string) ([]rankItem, error) {
+func (c *MpdClient) SearchInLibrary(search string) ([]rankItem, error) {
 	songs, err := c.GetAllSongs()
 	if err != nil {
 		return nil, err

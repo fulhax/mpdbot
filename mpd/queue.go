@@ -38,7 +38,7 @@ func (q *QueueHandler) songInQueue(file string) bool {
 }
 
 func (q *QueueHandler) AddToQueue(user string, song string) (QueueItem, error) {
-	sr, err := q.MpdClient.searchInLibrary(song)
+	sr, err := q.MpdClient.SearchInLibrary(song)
 	if err != nil {
 		return QueueItem{}, err
 	}

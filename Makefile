@@ -1,4 +1,4 @@
-exe = ./cmd
+exe = ./cmd/mpdbot
 
 .PHONY: all build build-arm install test deps 
 

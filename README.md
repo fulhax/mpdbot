@@ -1,7 +1,7 @@
 # mpdbot
 
 Install
-`go install github.com/fulhax/mpdbot`
+`go install github.com/fulhax/mpdbot/cmd/mpdbot`
 
 ```
 Usage of ./mpdbot:

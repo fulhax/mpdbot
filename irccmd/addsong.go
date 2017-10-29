@@ -1,17 +1,22 @@
-package main
+package irccmd
 
 import (
 	"fmt"
 	"regexp"
 
-	"github.com/fulhax/mpdbot/ircbot"
 	"github.com/fulhax/mpdbot/mpd"
 	"github.com/rendom/ircFormat"
+	"github.com/rendom/ircbot"
 	irc "github.com/thoj/go-ircevent"
 )
 
 type IrcAddSong struct {
-	mpdClient *mpd.MpdClient
+	mpdClient    *mpd.MpdClient
+	queueHandler *mpd.QueueHandler
+}
+
+func NewAddSong(m *mpd.MpdClient, q *mpd.QueueHandler) *IrcAddSong {
+	return &IrcAddSong{m, q}
 }
 
 func (i *IrcAddSong) Name() string {
@@ -40,7 +45,7 @@ func (i *IrcAddSong) HandleMessage(ev *irc.Event, ib *ircbot.Ircbot) {
 		return
 	}
 
-	file, err := queueHandler.AddToQueue(ev.Nick, m[1])
+	file, err := i.queueHandler.AddToQueue(ev.Nick, m[1])
 	if err != nil {
 		return
 	}

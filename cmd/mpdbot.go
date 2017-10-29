@@ -1,15 +1,15 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 
-	"github.com/fulhax/mpdbot/ircbot"
-	irccmd "github.com/fulhax/mpdbot/ircbot/cmd"
+	"github.com/fulhax/mpdbot/handler"
+	"github.com/fulhax/mpdbot/irccmd"
 	"github.com/fulhax/mpdbot/mpd"
-	"github.com/gorilla/mux"
+	"github.com/rendom/ircbot"
+	ircbotcmd "github.com/rendom/ircbot/cmd"
 	flag "github.com/spf13/pflag"
 	"github.com/spf13/viper"
 )
@@ -18,10 +18,10 @@ type mpdbotConfig struct {
 	Debug       bool
 	Mpd         string
 	MpdPassword string
-	HttpPort    string
+	HTTPport    string
 	IrcEnabled  bool
 	IrcNick     string
-	IrcTls      bool
+	IrcTLS      bool
 	IrcServer   string
 }
 
@@ -31,44 +31,16 @@ var (
 	config       mpdbotConfig
 )
 
-func errorHandler(w http.ResponseWriter, r *http.Request, status int) {
-	w.WriteHeader(status)
-	log.Printf("errorHandler status: %d", status)
-	switch status {
-	case 404:
-		fmt.Fprint(w, "404")
-	}
-}
+func serveHTTP() {
+	h := handler.New(mpdClient, queueHandler)
+	http.Handle("/", h)
 
-func serveJSON(w http.ResponseWriter, r *http.Request, val interface{}) {
-	w.Header().Set("content-Type", "application/json")
-	b, err := json.MarshalIndent(val, "", "\t")
-	if err != nil {
-		errorHandler(w, r, http.StatusInternalServerError)
-		return
-	}
-	w.Write(b)
-}
-
-func serveApi() {
-	r := mux.NewRouter()
-	r.HandleFunc("/playlist", getPlaylist).Methods("GET")
-	r.HandleFunc("/current", getNowPlayingHandler).Methods("GET")
-	r.HandleFunc("/next", playNextSongHandler).Methods("POST")
-	r.HandleFunc("/add", searchAndAdd).Methods("GET")
-	r.HandleFunc("/status", status).Methods("GET")
-	//r.HandleFunc("/search", searchInLibrary).Methods("GET")
-	// r.HandleFunct("/add", addToPlaylistHandler).Methods("POST")
-	http.Handle("/", r)
-
-	addr := fmt.Sprintf(":%s", config.HttpPort)
-
+	addr := fmt.Sprintf(":%s", config.HTTPport)
 	log.Printf("Listening on %s", addr)
 	err := http.ListenAndServe(addr, nil)
 	if err != nil {
 		log.Fatal(err)
 	}
-
 }
 
 func initConfig() {
@@ -98,21 +70,22 @@ func initConfig() {
 
 	err := viper.ReadInConfig()
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 
 	err = viper.Unmarshal(&config)
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 }
 
 func main() {
 	initConfig()
 
-	mpdClient, err := mpd.NewMpdClient(config.Mpd, config.MpdPassword)
+	var err error
+	mpdClient, err = mpd.NewMpdClient(config.Mpd, config.MpdPassword)
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 		return
 	}
 
@@ -120,12 +93,12 @@ func main() {
 	queueHandler.Init()
 
 	if config.IrcEnabled {
-		irc := ircbot.New(config.IrcNick, config.IrcServer, config.IrcTls)
-		irc.AddCommand(&irccmd.Usage{})
-		irc.AddCommand(&IrcMpdNp{mpdClient})
-		irc.AddCommand(&IrcAddSong{mpdClient})
-		irc.AddCommand(&IrcMpdUpdate{mpdClient})
+		irc := ircbot.New(config.IrcNick, config.IrcServer, config.IrcTLS)
+		irc.AddCommand(&ircbotcmd.Usage{})
+		irc.AddCommand(irccmd.NewNp(mpdClient))
+		irc.AddCommand(irccmd.NewAddSong(mpdClient, queueHandler))
+		irc.AddCommand(irccmd.NewMpdUpdate(mpdClient))
 	}
 
-	serveApi()
+	serveHTTP()
 }

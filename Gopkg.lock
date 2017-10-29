@@ -56,6 +56,12 @@
   revision = "bc04ed6ad950f99d4d426794c946fd1394018f72"
 
 [[projects]]
+  branch = "master"
+  name = "github.com/rendom/ircbot"
+  packages = [".","cmd"]
+  revision = "3c8e04a6da3e9077263d487dd1ec09c7cf6b8af8"
+
+[[projects]]
   name = "github.com/renstrom/fuzzysearch"
   packages = ["fuzzy"]
   revision = "d4ca9dfccd55dc6b076f9880d49c35315922c1f4"
@@ -118,6 +124,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "3e4a331263b8819f292de321032fc3a3823472b1f2e948a61e7d8265dc59fc78"
+  inputs-digest = "c03e2e1fab943be8b9d8f3e4a6db8e1234061973a3a68441a508f83639d19633"
   solver-name = "gps-cdcl"
   solver-version = 1

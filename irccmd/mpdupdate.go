@@ -1,16 +1,20 @@
-package main
+package irccmd
 
 import (
 	"regexp"
 
-	"github.com/fulhax/mpdbot/ircbot"
 	"github.com/fulhax/mpdbot/mpd"
 	"github.com/rendom/ircFormat"
+	"github.com/rendom/ircbot"
 	irc "github.com/thoj/go-ircevent"
 )
 
 type IrcMpdUpdate struct {
 	mpdClient *mpd.MpdClient
+}
+
+func NewMpdUpdate(m *mpd.MpdClient) *IrcMpdUpdate {
+	return &IrcMpdUpdate{m}
 }
 
 func (i *IrcMpdUpdate) Name() string {

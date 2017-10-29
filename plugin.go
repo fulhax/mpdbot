@@ -1,4 +1,4 @@
-package main
+package mpdbot
 
 // type PluginHandler struct {
 // 	loadedPlugins []Plugin

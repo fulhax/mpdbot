@@ -3,7 +3,7 @@ package cmd
 import (
 	"regexp"
 
-	"github.com/fulhax/mpdbot/ircbot"
+	"github.com/rendom/ircbot"
 	irc "github.com/thoj/go-ircevent"
 )
 
@@ -14,11 +14,11 @@ func (usage *Usage) Name() string {
 }
 
 func (usage *Usage) Usage() string {
-	return "!lol list all registered commands"
+	return "!h list all registered commands"
 }
 
 func (usage *Usage) Match(e *irc.Event) bool {
-	m, err := regexp.MatchString("^!lol", e.Message())
+	m, err := regexp.MatchString("^!h", e.Message())
 
 	if err != nil {
 		return false

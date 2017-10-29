@@ -29,7 +29,7 @@
   branch = "master"
   name = "github.com/hashicorp/hcl"
   packages = [".","hcl/ast","hcl/parser","hcl/scanner","hcl/strconv","hcl/token","json/parser","json/scanner","json/token"]
-  revision = "42e33e2d55a0ff1d6263f738896ea8c13571a8d0"
+  revision = "23c074d0eceb2b8a5bfdbb271ab780cde70f05a8"
 
 [[projects]]
   name = "github.com/magiconair/properties"
@@ -38,10 +38,16 @@
   version = "v1.7.3"
 
 [[projects]]
+  name = "github.com/mattn/go-sqlite3"
+  packages = ["."]
+  revision = "5160b48509cf5c877bc22c11c373f8c7738cdb38"
+  version = "v1.3.0"
+
+[[projects]]
   branch = "master"
   name = "github.com/mitchellh/mapstructure"
   packages = ["."]
-  revision = "d0303fe809921458f417bcf828397a65db30a7e4"
+  revision = "06020f85339e21b2478f756a78e295255ffa4d6a"
 
 [[projects]]
   name = "github.com/pelletier/go-toml"
@@ -53,13 +59,13 @@
   branch = "master"
   name = "github.com/rendom/ircFormat"
   packages = ["."]
-  revision = "bc04ed6ad950f99d4d426794c946fd1394018f72"
+  revision = "9f22378dd803ea25298527f1908d7434d9fa55a6"
 
 [[projects]]
   branch = "master"
   name = "github.com/rendom/ircbot"
   packages = [".","cmd"]
-  revision = "3c8e04a6da3e9077263d487dd1ec09c7cf6b8af8"
+  revision = "e33d3620e5bd761a475e84a633f7c6750eb90747"
 
 [[projects]]
   name = "github.com/renstrom/fuzzysearch"
@@ -71,7 +77,7 @@
   branch = "master"
   name = "github.com/spf13/afero"
   packages = [".","mem"]
-  revision = "e67d870304c4bca21331b02f414f970df13aa694"
+  revision = "5660eeed305fe5f69c8fc6cf899132a459a97064"
 
 [[projects]]
   name = "github.com/spf13/cast"
@@ -105,15 +111,21 @@
 
 [[projects]]
   branch = "master"
+  name = "golang.org/x/net"
+  packages = ["context"]
+  revision = "c73622c77280266305273cb545f54516ced95b93"
+
+[[projects]]
+  branch = "master"
   name = "golang.org/x/sys"
   packages = ["unix"]
-  revision = "686000749eaec0b8855b8eef5336cf63899fe51d"
+  revision = "661970f62f5897bc0cd5fdca7e087ba8a98a8fa1"
 
 [[projects]]
   branch = "master"
   name = "golang.org/x/text"
   packages = ["internal/gen","internal/triegen","internal/ucd","transform","unicode/cldr","unicode/norm"]
-  revision = "c01e4764d870b77f8abe5096ee19ad20d80e8075"
+  revision = "6eab0e8f74e86c598ec3b6fad4888e0c11482d48"
 
 [[projects]]
   branch = "v2"
@@ -124,6 +136,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "c03e2e1fab943be8b9d8f3e4a6db8e1234061973a3a68441a508f83639d19633"
+  inputs-digest = "6e02c36b85f17004c86460ebbced82f27bc02563fb7fb9731e885e1301d6e694"
   solver-name = "gps-cdcl"
   solver-version = 1

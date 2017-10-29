@@ -77,3 +77,11 @@ func TestItalicText(t *testing.T) {
 		t.Fatalf("Got %q, expected %q", c, expect)
 	}
 }
+
+func TestColorizeNone(t *testing.T) {
+	text := "test"
+	c := Colorize("test", None, None)
+	if c != text {
+		t.Fatalf("Got %q, expected %q", c, text)
+	}
+}

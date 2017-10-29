@@ -3,7 +3,7 @@ package ircbot
 import (
 	"crypto/tls"
 	"errors"
-	"fmt"
+	"log"
 
 	"github.com/thoj/go-ircevent"
 )
@@ -92,7 +92,7 @@ func (ib *Ircbot) SendMessage(c string, msg string) {
 func (ib *Ircbot) Init() {
 	err := ib.con.Connect(ib.server)
 	if err != nil {
-		fmt.Printf("[ircbot] Failed to connect to irc:  %s", err)
+		log.Printf("[ircbot] Failed to connect to irc: %v\n", err)
 	}
 	go ib.con.Loop()
 }

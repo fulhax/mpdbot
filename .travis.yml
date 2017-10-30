@@ -1,5 +1,14 @@
 language: go
 go:
     - 1.9
+addons:
+  apt:
+    packages:
+      - gcc-arm-linux-gnueabihf
+before_install:
+  - go get github.com/tcnksm/ghr
 after_success:
-  - test -n "$TRAVIS_TAG" && curl -sL https://git.io/goreleaser | bash
+  - GOOS=linux CC=gcc-arm-linux-gnueabihf GOARCH=arm GOARM=7 CGO_ENABLED=1 go build -v -o dist/linux_arm_mpdbot ./cmd/mpdbot
+  - CGO_ENABLED=1 go build -v -o dist/linux_amd64_mpdbot ./cmd/mpdbot
+  - if [ "$TRAVIS_TAG" != "" ]; then ghr --username rendom --token $GITHUB_TOKEN --replace $TRAVIS_TAG dist/; fi
+

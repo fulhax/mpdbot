@@ -3,6 +3,7 @@ package sqlite
 import (
 	"database/sql"
 	"fmt"
+
 	"github.com/fulhax/mpdbot/mpd/statistics"
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -61,11 +62,12 @@ func (s *sqlite) GetUserTop(u string, limit int) ([]statistics.SongStats, error)
 		WHERE user = ?
 		GROUP BY file
 		ORDER BY count(file)
-	`, limit)
+		LIMIT 0, ?
+	`, u, limit)
 }
 
-func (s *sqlite) songStatisticsQuery(q string, limit int) ([]statistics.SongStats, error) {
-	rows, err := s.DB.Query(q, limit)
+func (s *sqlite) songStatisticsQuery(q string, args ...interface{}) ([]statistics.SongStats, error) {
+	rows, err := s.DB.Query(q, args...)
 	if err != nil {
 		return nil, err
 	}

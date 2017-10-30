@@ -28,7 +28,7 @@ func (i *UserTop) Usage() string {
 }
 
 func (i *UserTop) Match(e *irc.Event) bool {
-	m, err := regexp.MatchString("^!top .+", e.Message())
+	m, err := regexp.MatchString("^!top", e.Message())
 
 	if err != nil {
 		return false

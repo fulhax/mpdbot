@@ -8,10 +8,10 @@ deps:
 	dep ensure	
 
 build:
-	go build -v -o build/mpdbot $(exe)
+	go build -v -o dist/mpdbot $(exe)
 
 build-arm:
-	env GOOS=android GOARCH=arm64 go build -v -o build/arm64/mpdbot $(exe)
+	env GOOS=linux GOARCH=arm64 go build -v -o dist/arm64/mpdbot $(exe)
 
 install:
 	go install $(exe)

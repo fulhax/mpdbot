@@ -12,13 +12,28 @@ import (
 type QueueHandler struct {
 	MpdClient    *MpdClient
 	StatsStorage statistics.Storage
-	currentSong  string
 	currentUser  string
-	lastQueued   string
-	queue        []QueueItem
+	usersQueues  []*userQueue
 }
 
-type QueueItem struct {
+type userQueue struct {
+	queue  []queueItem
+	autodj bool
+	user   string
+}
+
+func (u *userQueue) pullNextSong() queueItem {
+	if len(u.queue) == 0 {
+		// TODO if autodj get random song from statistics
+		return queueItem{}
+	}
+
+	qi := u.queue[0]
+	u.queue = append(u.queue[:0], u.queue[1:]...)
+	return qi
+}
+
+type queueItem struct {
 	User  string
 	File  string
 	Title string
@@ -31,30 +46,47 @@ func (q *QueueHandler) Init() (err error) {
 }
 
 func (q *QueueHandler) songInQueue(file string) bool {
-	for _, v := range q.queue {
-		if v.File == file {
-			return true
+	for _, uq := range q.usersQueues {
+		for _, v := range uq.queue {
+			if v.File == file {
+				return true
+			}
+
 		}
 	}
 
 	return false
 }
 
-func (q *QueueHandler) AddToQueue(user string, song string) (QueueItem, error) {
+func (q *QueueHandler) getUserQueue(u string) *userQueue {
+	for _, uq := range q.usersQueues {
+		if uq.user == u {
+			return uq
+		}
+	}
+
+	uq := &userQueue{autodj: false, user: u}
+	q.usersQueues = append(q.usersQueues, uq)
+
+	return uq
+}
+
+func (q *QueueHandler) AddToQueue(user string, song string) (queueItem, error) {
 	sr, err := q.MpdClient.SearchInLibrary(song)
 	if err != nil {
-		return QueueItem{}, err
+		return queueItem{}, err
 	}
 
 	if len(sr) > 0 {
 		if q.songInQueue(sr[0].File) == false {
-			item := QueueItem{
+			item := queueItem{
 				User:  user,
 				File:  sr[0].File,
 				Title: sr[0].Title,
 				Added: time.Now(),
 			}
-			q.queue = append(q.queue, item)
+			uq := q.getUserQueue(user)
+			uq.queue = append(uq.queue, item)
 			err := q.StatsStorage.AddSong(item.Title, item.File, user)
 			if err != nil {
 				log.Printf("Error while saving statistics: %v\n", err)
@@ -63,25 +95,29 @@ func (q *QueueHandler) AddToQueue(user string, song string) (QueueItem, error) {
 		}
 	}
 
-	return QueueItem{}, nil
+	return queueItem{}, nil
 }
 
-func (q *QueueHandler) pullNextSong() (file QueueItem, err error) {
-	idx := 0
-	for k, i := range q.queue {
-		if file.File == "" || i.User != file.User {
-			file = i
-			idx = k
-		}
-
-		if q.currentUser != i.User {
+func (q *QueueHandler) pullNextSong() (file queueItem, err error) {
+	picked := -1
+	var qi queueItem
+	for i, uq := range q.usersQueues {
+		qi = uq.pullNextSong()
+		if qi.File != "" {
+			picked = i
 			break
 		}
 	}
-	if file.File != "" {
-		q.queue = append(q.queue[:idx], q.queue[idx+1:]...)
+
+	len := len(q.usersQueues)
+	if picked != -1 && len > 1 {
+		m := q.usersQueues[picked]
+		q.currentUser = m.user
+		q.usersQueues = append(q.usersQueues[:picked], q.usersQueues[picked+1:]...)
+		q.usersQueues = append(q.usersQueues, m)
 	}
-	return file, nil
+
+	return qi, nil
 }
 
 // Handle mpd playlist and add new songs from queue
@@ -115,7 +151,6 @@ func (q *QueueHandler) queueNextSong() {
 
 	if next.File != "" {
 		q.MpdClient.AddSong(next.File)
-		q.currentUser = next.User
 	} else {
 		song, err := q.MpdClient.GetRandomSong()
 		if err == nil {

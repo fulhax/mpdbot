@@ -74,7 +74,13 @@ func (h handler) search(w http.ResponseWriter, r *http.Request) (interface{}, in
 func (h handler) searchAndAdd(w http.ResponseWriter, r *http.Request) (interface{}, int, error) {
 	search := r.FormValue("search")
 	user := r.FormValue("user")
-	file, err := h.queueHandler.AddToQueue(user, search)
+
+	result, err := h.mpdClient.SearchInLibrary(search)
+	if err != nil || len(result) == 0 {
+		return nil, http.StatusBadRequest, err
+	}
+
+	file, err := h.queueHandler.AddToQueue(user, result[0].File, result[0].File)
 	if err != nil {
 		return nil, http.StatusBadRequest, err
 	}

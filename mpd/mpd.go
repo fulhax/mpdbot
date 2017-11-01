@@ -12,6 +12,22 @@ import (
 	"github.com/renstrom/fuzzysearch/fuzzy"
 )
 
+type client interface {
+	SearchInLibrary(string) ([]rankItem, error)
+	AddSong(string) error
+	Play(int) error
+	GetStatus() (MpdStatus, error)
+	GetState() string
+	CurrentSong() (string, error)
+	GetRandomSong() (string, error)
+	GetAllSongs() ([]mpd.Attrs, error)
+	GetPlaylist() ([]mpd.Attrs, error)
+	Next() error
+	Update() error
+	Previous() error
+	ClearPlaylist() error
+}
+
 type MpdClient struct {
 	addr     string
 	password string

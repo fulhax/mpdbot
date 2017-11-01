@@ -2,15 +2,16 @@ package mpd
 
 import (
 	"fmt"
-	"github.com/fulhax/mpdbot/mpd/statistics"
+	"log"
 	"time"
 
+	"github.com/fulhax/mpdbot/mpd/statistics"
+
 	"github.com/fhs/gompd/mpd"
-	"log"
 )
 
 type QueueHandler struct {
-	MpdClient    *MpdClient
+	Client       client
 	StatsStorage statistics.Storage
 	currentUser  string
 	usersQueues  []*userQueue
@@ -22,6 +23,9 @@ type userQueue struct {
 	user   string
 }
 
+func (u *userQueue) addToQueue(item queueItem) {
+	u.queue = append(u.queue, item)
+}
 func (u *userQueue) pullNextSong() queueItem {
 	if len(u.queue) == 0 {
 		// TODO if autodj get random song from statistics
@@ -40,8 +44,8 @@ type queueItem struct {
 	Added time.Time
 }
 
-func (q *QueueHandler) Init() (err error) {
-	go q.handlePlaylist()
+func (q *QueueHandler) Init(addr, pw string) (err error) {
+	go q.handlePlaylist(addr, pw)
 	return nil
 }
 
@@ -71,31 +75,26 @@ func (q *QueueHandler) getUserQueue(u string) *userQueue {
 	return uq
 }
 
-func (q *QueueHandler) AddToQueue(user string, song string) (queueItem, error) {
-	sr, err := q.MpdClient.SearchInLibrary(song)
+// AddToQueue adds song to user queue, will return error if already queued
+func (q *QueueHandler) AddToQueue(user string, title string, file string) (queueItem, error) {
+	if q.songInQueue(file) {
+		return queueItem{}, fmt.Errorf("%s is already queued", file)
+	}
+
+	item := queueItem{
+		User:  user,
+		File:  file,
+		Title: title,
+		Added: time.Now(),
+	}
+
+	q.getUserQueue(user).addToQueue(item)
+	err := q.StatsStorage.AddSong(item.Title, item.File, user)
 	if err != nil {
-		return queueItem{}, err
+		log.Printf("Error while saving statistics: %v\n", err)
 	}
 
-	if len(sr) > 0 {
-		if q.songInQueue(sr[0].File) == false {
-			item := queueItem{
-				User:  user,
-				File:  sr[0].File,
-				Title: sr[0].Title,
-				Added: time.Now(),
-			}
-			uq := q.getUserQueue(user)
-			uq.queue = append(uq.queue, item)
-			err := q.StatsStorage.AddSong(item.Title, item.File, user)
-			if err != nil {
-				log.Printf("Error while saving statistics: %v\n", err)
-			}
-			return item, nil
-		}
-	}
-
-	return queueItem{}, nil
+	return item, nil
 }
 
 func (q *QueueHandler) pullNextSong() (file queueItem, err error) {
@@ -121,8 +120,8 @@ func (q *QueueHandler) pullNextSong() (file queueItem, err error) {
 }
 
 // Handle mpd playlist and add new songs from queue
-func (q *QueueHandler) handlePlaylist() (err error) {
-	w, err := mpd.NewWatcher("tcp", q.MpdClient.addr, q.MpdClient.password)
+func (q *QueueHandler) handlePlaylist(addr, pw string) (err error) {
+	w, err := mpd.NewWatcher("tcp", addr, pw)
 	if err != nil {
 		return err
 	}
@@ -135,26 +134,29 @@ func (q *QueueHandler) handlePlaylist() (err error) {
 	}()
 
 	for range w.Event {
-		status, _ := q.MpdClient.GetStatus()
+		status, _ := q.Client.GetStatus()
 		if status.State == "stop" {
-			q.MpdClient.ClearPlaylist()
+			q.Client.ClearPlaylist()
 			q.queueNextSong()
-			q.MpdClient.Play(0)
+			q.Client.Play(0)
 		}
 	}
 
 	return nil
 }
 
-func (q *QueueHandler) queueNextSong() {
+func (q *QueueHandler) queueNextSong() string {
 	next, _ := q.pullNextSong()
 
 	if next.File != "" {
-		q.MpdClient.AddSong(next.File)
+		q.Client.AddSong(next.File)
+		return next.File
 	} else {
-		song, err := q.MpdClient.GetRandomSong()
+		song, err := q.Client.GetRandomSong()
 		if err == nil {
-			q.MpdClient.AddSong(song)
+			q.Client.AddSong(song)
 		}
+
+		return song
 	}
 }

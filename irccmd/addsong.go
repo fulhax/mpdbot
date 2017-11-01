@@ -45,22 +45,28 @@ func (i *IrcAddSong) HandleMessage(ev *irc.Event, ib *ircbot.Ircbot) {
 		return
 	}
 
-	file, err := i.queueHandler.AddToQueue(ev.Nick, m[1])
-	if err != nil {
-		return
-	}
-
-	if file.File != "" {
-		msg := fmt.Sprintf("Added %s to queue", file.Title)
-		ib.SendMessage(
-			ev.Arguments[0],
-			ircFormat.Colorize(msg, ircFormat.Green, ircFormat.None),
-		)
-	} else {
+	songs, err := i.mpdClient.SearchInLibrary(m[1])
+	if err != nil || len(songs) == 0 {
 		msg := fmt.Sprintf("Unable to find song %s", m[1])
 		ib.SendMessage(
 			ev.Arguments[0],
 			ircFormat.Colorize(msg, ircFormat.Red, ircFormat.None),
 		)
+		return
 	}
+
+	file, err := i.queueHandler.AddToQueue(ev.Nick, songs[0].Title, songs[0].File)
+	if err != nil {
+		ib.SendMessage(
+			ev.Arguments[0],
+			ircFormat.Colorize(err.Error(), ircFormat.Red, ircFormat.None),
+		)
+		return
+	}
+
+	msg := fmt.Sprintf("Added %s to queue", file.Title)
+	ib.SendMessage(
+		ev.Arguments[0],
+		ircFormat.Colorize(msg, ircFormat.Green, ircFormat.None),
+	)
 }

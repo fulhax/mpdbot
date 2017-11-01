@@ -99,10 +99,10 @@ func main() {
 	}
 
 	queueHandler = &mpd.QueueHandler{
-		MpdClient:    mpdClient,
+		Client:       mpdClient,
 		StatsStorage: storage,
 	}
-	queueHandler.Init()
+	queueHandler.Init(config.Mpd, config.MpdPassword)
 
 	if config.IrcEnabled {
 		irc := ircbot.New(config.IrcNick, config.IrcServer, config.IrcTLS)

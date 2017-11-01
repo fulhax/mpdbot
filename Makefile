@@ -2,7 +2,7 @@ exe = ./cmd/mpdbot
 
 .PHONY: all build build-arm install test deps 
 
-all: install
+all: test build
 
 deps:
 	dep ensure	
@@ -17,4 +17,4 @@ install:
 	go install $(exe)
 
 test:
-	go test
+	go test ./...

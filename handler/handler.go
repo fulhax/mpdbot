@@ -10,6 +10,7 @@ import "github.com/fulhax/mpdbot/mpd/statistics"
 type handler struct {
 	mpdClient    *mpd.MpdClient
 	queueHandler *mpd.QueueHandler
+	stats        statistics.Storage
 }
 
 type NowPlayingResponse struct {
@@ -17,8 +18,8 @@ type NowPlayingResponse struct {
 	Song  string
 }
 
-func New(m *mpd.MpdClient, q *mpd.QueueHandler) *mux.Router {
-	h := handler{m, q}
+func New(m *mpd.MpdClient, q *mpd.QueueHandler, s statistics.Storage) *mux.Router {
+	h := handler{m, q, s}
 	r := mux.NewRouter()
 
 	r.HandleFunc("/current", jsonResponseHandler(h.getNowPlaying)).Methods("GET")
@@ -128,9 +129,9 @@ func (h handler) toplist(w http.ResponseWriter, r *http.Request) (interface{}, i
 	var err error
 
 	if user != "" {
-		items, err = h.queueHandler.StatsStorage.GetUserTop(user, 25)
+		items, err = h.stats.GetUserTop(user, 25)
 	} else {
-		items, err = h.queueHandler.StatsStorage.GetTop(25)
+		items, err = h.stats.GetTop(25)
 	}
 
 	if err != nil {

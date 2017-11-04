@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"regexp"
 
-	"github.com/fulhax/mpdbot/mpd"
 	"github.com/fulhax/mpdbot/mpd/statistics"
 	"github.com/rendom/ircFormat"
 	"github.com/rendom/ircbot"
@@ -12,11 +11,11 @@ import (
 )
 
 type UserTop struct {
-	queueHandler *mpd.QueueHandler
+	storage statistics.Storage
 }
 
-func NewUserTop(q *mpd.QueueHandler) *UserTop {
-	return &UserTop{q}
+func NewUserTop(s statistics.Storage) *UserTop {
+	return &UserTop{s}
 }
 
 func (i *UserTop) Name() string {
@@ -44,9 +43,9 @@ func (i *UserTop) HandleMessage(ev *irc.Event, ib *ircbot.Ircbot) {
 	var songs []statistics.SongStats
 	var err error
 	if len(m) == 0 {
-		songs, err = i.queueHandler.StatsStorage.GetTop(5)
+		songs, err = i.storage.GetTop(5)
 	} else {
-		songs, err = i.queueHandler.StatsStorage.GetUserTop(m[1], 5)
+		songs, err = i.storage.GetUserTop(m[1], 5)
 	}
 
 	if err != nil {

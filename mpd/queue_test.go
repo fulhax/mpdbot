@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/fhs/gompd/mpd"
+	"github.com/fulhax/mpdbot/mpd/statistics"
 	"github.com/fulhax/mpdbot/mpd/statistics/sqlite"
 )
 
@@ -27,9 +28,20 @@ func (t TestClient) Update() error                     { return nil }
 func (t TestClient) Previous() error                   { return nil }
 func (t TestClient) ClearPlaylist() error              { return nil }
 
+func addSongsToStats(u string, c int, stats statistics.Storage) []string {
+	var songs []string
+	for i := 0; i < c; i++ {
+		s := fmt.Sprintf("song%d.mp3", i)
+		songs = append(songs, s)
+		stats.AddSong(s, s, u)
+	}
+
+	return songs
+}
+
 func generateFakeQueue() QueueHandler {
 	uq := make([]*userQueue, 3)
-	for k, _ := range uq {
+	for k := range uq {
 		u := fmt.Sprintf("user%d", k)
 		uq[k] = &userQueue{
 			user: u,
@@ -39,16 +51,29 @@ func generateFakeQueue() QueueHandler {
 			},
 		}
 	}
-
-	DB, _ := sqlite.New(":memory:")
+	s, _ := sqlite.New(":memory:")
 	q := QueueHandler{
 		Client:       &TestClient{},
 		currentUser:  "user1",
 		usersQueues:  uq,
-		StatsStorage: DB,
+		statsStorage: s,
 	}
 
 	return q
+}
+
+func TestNewQueueHandler(t *testing.T) {
+	c := &TestClient{}
+	s, _ := sqlite.New(":memory:")
+	q := NewQueueHandler(c, s)
+
+	if q.statsStorage != s {
+		t.Errorf("stats storage invalid")
+	}
+
+	if q.Client != c {
+		t.Errorf("wrong client")
+	}
 }
 
 func TestSongInQueue(t *testing.T) {
@@ -71,7 +96,7 @@ func TestSongInQueue(t *testing.T) {
 	}
 }
 
-func TestPullNextSong(t *testing.T) {
+func TestQueueHandlerPullNextSong(t *testing.T) {
 	q := generateFakeQueue()
 	q.currentUser = ""
 
@@ -91,7 +116,7 @@ func TestPullNextSong(t *testing.T) {
 	for _, v := range tbl {
 		next, _ := q.pullNextSong()
 		if (next.File == v.f) != v.e {
-			t.Errorf("pullNextSong was incorrect (%s == %s) got:%v want:%v", next.File, v.f, !v.e, v.e)
+			t.Errorf("QueueHandler.pullNextSong was incorrect (%s == %s) got:%v want:%v", next.File, v.f, !v.e, v.e)
 		}
 
 	}
@@ -167,14 +192,107 @@ func TestAddToQueue(t *testing.T) {
 	}
 
 	if i.Title != title {
-		t.Errorf("AddToQueue was incorrect expected file:%s got %s", title, i.Title)
+		t.Errorf("AddToQueue was incorrect expected title:%s got %s", title, i.Title)
 	}
 
 	if i.User != user {
-		t.Errorf("AddToQueue was incorrect expected file:%s got %s", user, i.User)
+		t.Errorf("AddToQueue was incorrect expected user:%s got %s", user, i.User)
 	}
 
 	if i != q.usersQueues[0].queue[0] {
 		t.Errorf("AddToQueue song not added to user queue")
+	}
+}
+
+func TestDisableAutoDj(t *testing.T) {
+	uq := userQueue{autodj: false}
+	uq.DisableAutoDj()
+	e := false
+
+	if uq.autodj != e {
+		t.Errorf("DisableAutoDj autodj was incorrect expected:%v got:%v", e, uq.autodj)
+	}
+}
+
+func TestEnableAutoDj(t *testing.T) {
+	h := generateFakeQueue()
+	uq := userQueue{user: "test", autodj: false, handler: &h}
+	err := uq.EnableAutoDj()
+
+	if err == nil {
+		t.Errorf("EnableAutoDj expected error")
+	}
+
+	addSongsToStats("test", 20, h.statsStorage)
+
+	err = uq.EnableAutoDj()
+	if err != nil {
+		t.Errorf("EnableAutoDj should not return error: %v", err)
+	}
+
+	if uq.autodj != true {
+		t.Errorf("EnableAutoDj uq.autodj was incorrect expected: true got: %v", uq.autodj)
+	}
+}
+
+func TestGetRandomSong(t *testing.T) {
+	h := generateFakeQueue()
+	uq := userQueue{user: "test", autodj: false, handler: &h}
+	err := uq.EnableAutoDj()
+
+	qi, err := uq.getRandomSong()
+	if err == nil {
+		t.Errorf("getRandomSong should return error if stats is empty")
+	}
+
+	songs := addSongsToStats("test", 1, h.statsStorage)
+
+	qi, err = uq.getRandomSong()
+	if err != nil {
+		t.Errorf("getRandomSong should not return error: %v", err)
+	}
+
+	s := songs[0]
+	if qi.File != songs[0] {
+		t.Errorf("getRandomSong was incorrect expected song:%s got %s", s, qi.File)
+	}
+}
+
+func TestUserQueuePullNextSongAutoDj(t *testing.T) {
+	h := generateFakeQueue()
+	uq := userQueue{user: "test", autodj: true, handler: &h}
+
+	songs := addSongsToStats("test", 1, h.statsStorage)
+
+	qi := uq.pullNextSong()
+	s := songs[0]
+	if qi.File != s {
+		t.Errorf("UserQueue.PullNextSongAutoDj was incorrect expected song:%s got %s", s, qi.File)
+	}
+}
+
+func TestToggleAutodj(t *testing.T) {
+	h := generateFakeQueue()
+	uq := h.getUserQueue("test")
+	addSongsToStats("test", 15, h.statsStorage)
+
+	v, _ := h.ToggleAutodj("test")
+	e := true
+	if uq.autodj != v {
+		t.Errorf("ToggleAutodj was incorrect expected:%v got %v", e, v)
+	}
+
+	if v != e {
+		t.Errorf("ToggleAutodj was incorrect expected:%v got %v", e, v)
+	}
+
+	v, _ = h.ToggleAutodj("test")
+	e = false
+	if uq.autodj != v {
+		t.Errorf("ToggleAutodj was incorrect expected:%v got %v", e, v)
+	}
+
+	if v != e {
+		t.Errorf("ToggleAutodj was incorrect expected:%v got %v", e, v)
 	}
 }

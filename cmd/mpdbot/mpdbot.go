@@ -8,6 +8,7 @@ import (
 	"github.com/fulhax/mpdbot/handler"
 	"github.com/fulhax/mpdbot/irccmd"
 	"github.com/fulhax/mpdbot/mpd"
+	"github.com/fulhax/mpdbot/mpd/statistics"
 	"github.com/fulhax/mpdbot/mpd/statistics/sqlite"
 	"github.com/rendom/ircbot"
 	ircbotcmd "github.com/rendom/ircbot/cmd"
@@ -30,11 +31,12 @@ type mpdbotConfig struct {
 var (
 	queueHandler *mpd.QueueHandler
 	mpdClient    *mpd.MpdClient
+	stats        statistics.Storage
 	config       mpdbotConfig
 )
 
 func serveHTTP() {
-	h := handler.New(mpdClient, queueHandler)
+	h := handler.New(mpdClient, queueHandler, stats)
 	http.Handle("/", h)
 
 	addr := fmt.Sprintf(":%s", config.HTTPport)
@@ -87,22 +89,19 @@ func main() {
 	initConfig()
 
 	var err error
+	stats, err = sqlite.New(config.StatsDB)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	mpdClient, err = mpd.NewMpdClient(config.Mpd, config.MpdPassword)
 	if err != nil {
 		log.Fatal(err)
 		return
 	}
 
-	storage, err := sqlite.New(config.StatsDB)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	queueHandler = &mpd.QueueHandler{
-		Client:       mpdClient,
-		StatsStorage: storage,
-	}
-	queueHandler.Init(config.Mpd, config.MpdPassword)
+	queueHandler = mpd.NewQueueHandler(mpdClient, stats)
+	go queueHandler.HandlePlaylist(config.Mpd, config.MpdPassword)
 
 	if config.IrcEnabled {
 		irc := ircbot.New(config.IrcNick, config.IrcServer, config.IrcTLS)
@@ -110,7 +109,7 @@ func main() {
 		irc.AddCommand(irccmd.NewNp(mpdClient))
 		irc.AddCommand(irccmd.NewAddSong(mpdClient, queueHandler))
 		irc.AddCommand(irccmd.NewMpdUpdate(mpdClient))
-		irc.AddCommand(irccmd.NewUserTop(queueHandler))
+		irc.AddCommand(irccmd.NewUserTop(stats))
 	}
 
 	serveHTTP()

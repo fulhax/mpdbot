@@ -12,24 +12,61 @@ import (
 
 type QueueHandler struct {
 	Client       client
-	StatsStorage statistics.Storage
 	currentUser  string
 	usersQueues  []*userQueue
+	statsStorage statistics.Storage
 }
 
 type userQueue struct {
-	queue  []queueItem
-	autodj bool
-	user   string
+	queue   []queueItem
+	autodj  bool
+	user    string
+	handler *QueueHandler
 }
 
 func (u *userQueue) addToQueue(item queueItem) {
 	u.queue = append(u.queue, item)
 }
+
+func (u *userQueue) getRandomSong() (queueItem, error) {
+	songs, err := u.handler.statsStorage.GetUserTop(u.user, 200)
+	if err != nil {
+		return queueItem{}, err
+	}
+
+	if len(songs) == 0 {
+		return queueItem{}, fmt.Errorf("No songs found")
+	}
+	return queueItem{
+		u.user,
+		songs[0].Song.File,
+		songs[0].Song.Title,
+		time.Now(),
+	}, nil
+}
+
+func (u *userQueue) EnableAutoDj() error {
+	songs, _ := u.handler.statsStorage.GetUserTop(u.user, 15)
+	if len(songs) < 15 {
+		return fmt.Errorf("Requires 15 songs for autodj")
+	}
+
+	u.autodj = true
+	return nil
+}
+
+func (u *userQueue) DisableAutoDj() {
+	u.autodj = false
+}
+
 func (u *userQueue) pullNextSong() queueItem {
 	if len(u.queue) == 0 {
-		// TODO if autodj get random song from statistics
-		return queueItem{}
+		if u.autodj {
+			s, _ := u.getRandomSong()
+			return s
+		} else {
+			return queueItem{}
+		}
 	}
 
 	qi := u.queue[0]
@@ -44,9 +81,10 @@ type queueItem struct {
 	Added time.Time
 }
 
-func (q *QueueHandler) Init(addr, pw string) (err error) {
-	go q.handlePlaylist(addr, pw)
-	return nil
+// TODO: load saved state?
+func NewQueueHandler(c client, s statistics.Storage) *QueueHandler {
+	q := &QueueHandler{Client: c, statsStorage: s}
+	return q
 }
 
 func (q *QueueHandler) songInQueue(file string) bool {
@@ -69,7 +107,7 @@ func (q *QueueHandler) getUserQueue(u string) *userQueue {
 		}
 	}
 
-	uq := &userQueue{autodj: false, user: u}
+	uq := &userQueue{autodj: false, user: u, handler: q}
 	q.usersQueues = append(q.usersQueues, uq)
 
 	return uq
@@ -89,7 +127,7 @@ func (q *QueueHandler) AddToQueue(user string, title string, file string) (queue
 	}
 
 	q.getUserQueue(user).addToQueue(item)
-	err := q.StatsStorage.AddSong(item.Title, item.File, user)
+	err := q.statsStorage.AddSong(item.Title, item.File, user)
 	if err != nil {
 		log.Printf("Error while saving statistics: %v\n", err)
 	}
@@ -119,8 +157,9 @@ func (q *QueueHandler) pullNextSong() (file queueItem, err error) {
 	return qi, nil
 }
 
+// TODO: Move handlePlaylist and ququeNextSong(remove it?) to mpd.go instead.
 // Handle mpd playlist and add new songs from queue
-func (q *QueueHandler) handlePlaylist(addr, pw string) (err error) {
+func (q *QueueHandler) HandlePlaylist(addr, pw string) (err error) {
 	w, err := mpd.NewWatcher("tcp", addr, pw)
 	if err != nil {
 		return err
@@ -158,5 +197,16 @@ func (q *QueueHandler) queueNextSong() string {
 		}
 
 		return song
+	}
+}
+
+func (q *QueueHandler) ToggleAutodj(u string) (bool, error) {
+	uq := q.getUserQueue(u)
+	if uq.autodj {
+		uq.DisableAutoDj()
+		return uq.autodj, nil
+	} else {
+		err := uq.EnableAutoDj()
+		return uq.autodj, err
 	}
 }

@@ -4,11 +4,13 @@ go:
 addons:
   apt:
     packages:
-      - gcc-arm-linux-gnueabihf
+      - libc6-dev-armel-cross
+      - gcc-arm-linux-gnueabi
 before_install:
   - go get github.com/tcnksm/ghr
 after_success:
-  - GOOS=linux CC=gcc-arm-linux-gnueabihf GOARCH=arm GOARM=7 CGO_ENABLED=1 go build -v -o dist/linux_arm_mpdbot ./cmd/mpdbot
-  - CGO_ENABLED=1 go build -v -o dist/linux_amd64_mpdbot ./cmd/mpdbot
+  - make clean
+  - GOOS=linux CC=arm-linux-gnueabi-gcc GOARCH=arm GOARM=7 CGO_ENABLED=1 go build -v -o dist/linux_arm_mpdbot/mpdbot ./cmd/mpdbot
+  - CGO_ENABLED=1 go build -v -o dist/linux_amd64_mpdbot/mpdbot ./cmd/mpdbot
+  - for i in $(find dist -mindepth 1 -maxdepth 1 -type d); do cp {README.md,config.yml} $i; tar -czf "$i".tar.gz -C "$i" "."; done
   - if [ "$TRAVIS_TAG" != "" ]; then ghr --username rendom --token $GITHUB_TOKEN --replace $TRAVIS_TAG dist/; fi
-

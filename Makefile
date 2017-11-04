@@ -1,17 +1,17 @@
 exe = ./cmd/mpdbot
 
-.PHONY: all build build-arm install test deps 
+.PHONY: all build install test deps 
 
-all: test build
+all: test clean build
 
 deps:
 	dep ensure	
 
+clean:
+	rm -rf dist/*
+
 build:
 	go build -v -o dist/mpdbot $(exe)
-
-build-arm:
-	env GOOS=linux GOARCH=arm64 go build -v -o dist/arm64/mpdbot $(exe)
 
 install:
 	go install $(exe)

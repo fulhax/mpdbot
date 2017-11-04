@@ -91,12 +91,12 @@ func main() {
 	var err error
 	stats, err = sqlite.New(config.StatsDB)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Unable setup stats db (%v)", err.Error())
 	}
 
 	mpdClient, err = mpd.NewMpdClient(config.Mpd, config.MpdPassword)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Unable to connect to mpd (%v)", err.Error())
 		return
 	}
 

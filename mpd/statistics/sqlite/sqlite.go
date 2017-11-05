@@ -50,7 +50,7 @@ func (s *sqlite) GetTop(limit int) ([]statistics.SongStats, error) {
 		SELECT title, file, count(file) as timesQueued
 		FROM songs
 		GROUP BY file
-		ORDER BY count(file)
+		ORDER BY count(file) DESC
 		LIMIT 0,$1
 	`, limit)
 }
@@ -61,7 +61,7 @@ func (s *sqlite) GetUserTop(u string, limit int) ([]statistics.SongStats, error)
 		FROM songs
 		WHERE user = ?
 		GROUP BY file
-		ORDER BY count(file)
+		ORDER BY count(file) DESC
 		LIMIT 0, ?
 	`, u, limit)
 }

@@ -15,6 +15,27 @@ Usage of ./mpdbot:
       --mpd string           mpd host (default "127.0.0.1:6600")
       --mpdPassword string   mpd password
 ```
+#### Irc commands
+| Event | |
+| --- | --- |
+| !help | List all available commands |
+| !np | Now playing |
+| !mpd update | Updates mpd index |
+| !mpd add <search> | Add song to queue (fuzzy search) |
+| !top | Top 5 queued songs |
+| !top <user> | Top 5 queued song by user |
+| !autodj | Enable autodj (If user queue is empty it will fetch random song from he's top 200) |
+      
+#### HTTP api
+| URI | Method | Params |  |
+| --- | --- | --- | --- |
+| /current | GET | | |
+| /next | POST | | |
+| /add | GET | user, song |  |
+| /search| GET | search |  |
+| /status | GET | |  |
+| /top | GET | user(optional) |  |
+
 
 config.yml 
 ```
@@ -27,3 +48,4 @@ ircTls: true
 ircEnabled: true
 ircNick: "mpdbot"
 ```
+

@@ -110,6 +110,7 @@ func main() {
 		irc.AddCommand(irccmd.NewAddSong(mpdClient, queueHandler))
 		irc.AddCommand(irccmd.NewMpdUpdate(mpdClient))
 		irc.AddCommand(irccmd.NewUserTop(stats))
+		irc.AddCommand(irccmd.NewAutodj(queueHandler))
 	}
 
 	serveHTTP()

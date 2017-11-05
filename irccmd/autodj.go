@@ -11,12 +11,11 @@ import (
 )
 
 type Autodj struct {
-	mpdClient    *mpd.MpdClient
 	queueHandler *mpd.QueueHandler
 }
 
-func NewAutodj(m *mpd.MpdClient, q *mpd.QueueHandler) *Autodj {
-	return &Autodj{m, q}
+func NewAutodj(q *mpd.QueueHandler) *Autodj {
+	return &Autodj{q}
 }
 
 func (i *Autodj) Name() string {

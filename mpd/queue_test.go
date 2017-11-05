@@ -17,7 +17,7 @@ func (t TestClient) SearchInLibrary(z string) ([]rankItem, error) {
 }
 func (t TestClient) AddSong(s string) error            { return nil }
 func (t TestClient) Play(z int) error                  { return nil }
-func (t TestClient) GetStatus() (MpdStatus, error)     { return MpdStatus{}, nil }
+func (t TestClient) GetStatus() (mpdStatus, error)     { return mpdStatus{}, nil }
 func (t TestClient) GetState() string                  { return "" }
 func (t TestClient) CurrentSong() (string, error)      { return "", nil }
 func (t TestClient) GetAllSongs() ([]mpd.Attrs, error) { return []mpd.Attrs{}, nil }

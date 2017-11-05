@@ -16,7 +16,7 @@ type client interface {
 	SearchInLibrary(string) ([]rankItem, error)
 	AddSong(string) error
 	Play(int) error
-	GetStatus() (MpdStatus, error)
+	GetStatus() (mpdStatus, error)
 	GetState() string
 	CurrentSong() (string, error)
 	GetRandomSong() (string, error)
@@ -40,7 +40,7 @@ type rankItem struct {
 	Rank  int
 }
 
-type MpdStatus struct {
+type mpdStatus struct {
 	Bitrate        string
 	Duration       string
 	Elapsed        string
@@ -134,16 +134,16 @@ func (c *MpdClient) Play(pos int) error {
 	return nil
 }
 
-func (c *MpdClient) GetStatus() (MpdStatus, error) {
+func (c *MpdClient) GetStatus() (mpdStatus, error) {
 	s, err := c.con.Status()
 	if err != nil {
-		return MpdStatus{}, err
+		return mpdStatus{}, err
 	}
 
 	pLen, _ := strconv.Atoi(s["playlistlength"])
 	song, _ := strconv.Atoi(s["song"])
 
-	status := MpdStatus{
+	status := mpdStatus{
 		s["bitrate"],
 		s["duration"],
 		s["elapsed"],

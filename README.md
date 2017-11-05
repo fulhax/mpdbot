@@ -25,6 +25,7 @@ Usage of ./mpdbot:
 | !top | Top 5 queued songs |
 | !top <user> | Top 5 queued song by user |
 | !autodj | Enable autodj (If user queue is empty it will fetch random song from he's top 200) |
+| !mpd start | Start mpdbot queue |
       
 #### HTTP api
 | URI | Method | Params |  |

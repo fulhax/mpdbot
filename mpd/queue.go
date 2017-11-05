@@ -152,3 +152,12 @@ func (q *QueueHandler) ToggleAutodj(u string) (bool, error) {
 		return uq.autodj, err
 	}
 }
+
+// StartQueue starts up the queue, if mpd is stopped.
+func (q *QueueHandler) StartQueue() {
+	s, _ := q.Client.GetStatus()
+	if s.State != "play" {
+		q.queueNextSong()
+		q.Client.Play(0)
+	}
+}

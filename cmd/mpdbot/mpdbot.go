@@ -121,6 +121,7 @@ func main() {
 		irc.AddCommand(irccmd.NewMpdUpdate(mpdClient))
 		irc.AddCommand(irccmd.NewUserTop(stats))
 		irc.AddCommand(irccmd.NewAutodj(queueHandler))
+		irc.AddCommand(irccmd.NewMpdStart(queueHandler))
 	}
 
 	serveHTTP()

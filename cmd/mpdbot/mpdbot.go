@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/fulhax/mpdbot/handler"
 	"github.com/fulhax/mpdbot/irccmd"
@@ -33,6 +34,8 @@ var (
 	mpdClient    *mpd.MpdClient
 	stats        statistics.Storage
 	config       mpdbotConfig
+	BuildDate    string
+	Version      string
 )
 
 func serveHTTP() {
@@ -86,6 +89,13 @@ func initConfig() {
 }
 
 func main() {
+	if Version != "" && BuildDate != "" {
+		flag.Usage = func() {
+			fmt.Fprintf(os.Stderr, "Usage of %s (%s %s):\n", os.Args[0], Version, BuildDate)
+			flag.PrintDefaults()
+		}
+	}
+
 	initConfig()
 
 	var err error

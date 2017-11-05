@@ -12,7 +12,6 @@ before_install:
   - go get github.com/tcnksm/ghr
 after_success:
   - make clean
-  - GOOS=linux CC=arm-linux-gnueabihf-gcc GOOS=linux GOARCH=arm CGO_ENABLED=1 go build -v -o dist/linux_arm_mpdbot/mpdbot ./cmd/mpdbot
-  - CGO_ENABLED=1 go build -v -o dist/linux_amd64_mpdbot/mpdbot ./cmd/mpdbot
+  - make build-release
   - for i in $(find dist -mindepth 1 -maxdepth 1 -type d); do cp {README.md,config.yml} $i; tar -czf "$i".tar.gz -C "$i" "."; done
   - if [ "$TRAVIS_TAG" != "" ]; then ghr --username fulhax --token $GITHUB_TOKEN --replace $TRAVIS_TAG dist/; fi

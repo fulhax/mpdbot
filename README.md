@@ -15,6 +15,9 @@ Usage of ./mpdbot:
       --mpd string           mpd host (default "127.0.0.1:6600")
       --mpdPassword string   mpd password
 ```
+### Compile plugin
+| go build -buildmode=plugin -o outpufile.so (plugin-file)
+
 #### Irc commands
 | Event | |
 | --- | --- |

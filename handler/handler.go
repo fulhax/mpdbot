@@ -6,11 +6,13 @@ import "github.com/gorilla/mux"
 import "encoding/json"
 import "github.com/fulhax/mpdbot/mpd"
 import "github.com/fulhax/mpdbot/mpd/statistics"
+import mpdPlugin "github.com/fulhax/mpdbot/plugin"
 
 type handler struct {
 	mpdClient    *mpd.MpdClient
 	queueHandler *mpd.QueueHandler
 	stats        statistics.Storage
+	sources      *[]mpdPlugin.MpdMediaSource
 }
 
 type NowPlayingResponse struct {
@@ -18,8 +20,8 @@ type NowPlayingResponse struct {
 	Song  string
 }
 
-func New(m *mpd.MpdClient, q *mpd.QueueHandler, s statistics.Storage) *mux.Router {
-	h := handler{m, q, s}
+func New(m *mpd.MpdClient, q *mpd.QueueHandler, s statistics.Storage, p *[]mpdPlugin.MpdMediaSource) *mux.Router {
+	h := handler{m, q, s, p}
 	r := mux.NewRouter()
 
 	r.HandleFunc("/current", jsonResponseHandler(h.getNowPlaying)).Methods("GET")
@@ -76,12 +78,24 @@ func (h handler) searchAndAdd(w http.ResponseWriter, r *http.Request) (interface
 	search := r.FormValue("search")
 	user := r.FormValue("user")
 
-	result, err := h.mpdClient.SearchInLibrary(search)
-	if err != nil || len(result) == 0 {
-		return nil, http.StatusBadRequest, err
+	var uri, name string
+	for _, v := range *h.sources {
+		if v.IsSong(search) {
+			//TODO: GetURI should return a struct containing title and file
+			log.Printf("sdfasdf")
+			uri, name, _ = v.GetURI(search)
+			log.Printf("%s asdfasdf", uri)
+			break
+		}
 	}
 
-	file, err := h.queueHandler.AddToQueue(user, result[0].File, result[0].File)
+	//result, err := h.mpdClient.SearchInLibrary(search)
+	//if err != nil || len(result) == 0 {
+	//	return nil, http.StatusBadRequest, err
+	//}
+
+	file, err := h.queueHandler.AddToQueue(user, name, uri)
+	//file, err := h.queueHandler.AddToQueue(user, result[0].File, result[0].File)
 	if err != nil {
 		return nil, http.StatusBadRequest, err
 	}

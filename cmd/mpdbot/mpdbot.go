@@ -11,6 +11,7 @@ import (
 	"github.com/fulhax/mpdbot/mpd"
 	"github.com/fulhax/mpdbot/mpd/statistics"
 	"github.com/fulhax/mpdbot/mpd/statistics/sqlite"
+	mpdPlugin "github.com/fulhax/mpdbot/plugin"
 	"github.com/rendom/ircbot"
 	ircbotcmd "github.com/rendom/ircbot/cmd"
 	flag "github.com/spf13/pflag"
@@ -36,10 +37,11 @@ var (
 	config       mpdbotConfig
 	BuildDate    string
 	Version      string
+	songSources  *[]mpdPlugin.MpdMediaSource
 )
 
 func serveHTTP() {
-	h := handler.New(mpdClient, queueHandler, stats)
+	h := handler.New(mpdClient, queueHandler, stats, songSources)
 	http.Handle("/", h)
 
 	addr := fmt.Sprintf(":%s", config.HTTPport)
@@ -124,5 +126,11 @@ func main() {
 		irc.AddCommand(irccmd.NewMpdStart(queueHandler))
 	}
 
+	//TODO: This should come from the command line
+	asd := []string{"spotify.so"}
+	songSources = mpdPlugin.LoadPlugins(asd)
+	for k, _ := range *songSources {
+		(*songSources)[k].Auth()
+	}
 	serveHTTP()
 }
